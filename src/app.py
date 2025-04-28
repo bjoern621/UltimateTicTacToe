@@ -10,6 +10,7 @@ def main():
     board = UTTTBoard()
 
     playerX = ConsoleHandler("X")
+    # playerX = RandomHandler()
     playerO = RandomHandler()
 
     state = GameState(board, playerX, playerO)
