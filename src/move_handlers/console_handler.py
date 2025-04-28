@@ -8,9 +8,12 @@ class ConsoleHandler(MoveHandler):
         self.player = player
 
     def get_move(self, board: UTTTBoard) -> tuple[BoardIndex, CellIndex]:
-        player_input = input(
-            f"Player {self.player}, enter your move (board index and cell index): "
-        )
+        try:
+            player_input = input(
+                f"Player {self.player}, enter your move (board index and cell index): "
+            )
+        except KeyboardInterrupt:
+            exit(0)
 
         try:
             board_index, cell_index = map(int, player_input.split())
