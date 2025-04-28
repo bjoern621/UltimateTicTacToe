@@ -1,6 +1,6 @@
 from move_handlers.move_handler import MoveHandler
 from ttt_board import Player
-from uttt_board import UTTTBoard
+from uttt_board import BoardIndex, UTTTBoard
 
 
 class GameState:
@@ -13,9 +13,8 @@ class GameState:
         self.current_player: Player = "X"
         self.game_over: bool = False
 
-        # Next board to play in, None is any board
-        self.next_board_index: int | None = None
-        self.next_player: Player = "X"
+        # Current board to play in, None is any board
+        self.current_board_index: BoardIndex | None = None
 
     def __switch_player(self):
         self.current_player = "O" if self.current_player == "X" else "X"
@@ -35,14 +34,23 @@ class GameState:
             assert 0 <= board_index <= 8, "Board index must be between 0 and 8."
             assert 0 <= cell_index <= 8, "Cell index must be between 0 and 8."
 
-            small_board = self.board.get_small_board(board_index)
-            if small_board.winner is not None:
+            if (
+                self.current_board_index is not None
+                and board_index != self.current_board_index
+            ):
                 print(
-                    f"Board {board_index} already won by {small_board.winner}! Try again."
+                    f"Invalid move! You must play in board {self.current_board_index}."
                 )
                 continue
 
-            if small_board.get_cell_value(cell_index) is not None:  # type: ignore
+            current_small_board = self.board.get_small_board(board_index)
+            if current_small_board.winner is not None:
+                print(
+                    f"Board {board_index} already won by {current_small_board.winner}! Try again."
+                )
+                continue
+
+            if current_small_board.get_cell_value(cell_index) is not None:  # type: ignore
                 print("Cell already occupied! Try again.")
                 continue
 
@@ -57,6 +65,14 @@ class GameState:
                 self.board.display_board()
                 break
 
-            # TODO: Implement logic to determine next_board_index
+            # Allow the next move to be played only in the small board
+            # corresponding to the cell index of the last move
+            next_small_board = self.board.get_small_board(cell_index)
+            if next_small_board.winner is None:
+                self.current_board_index = cell_index
+            else:
+                # If the next small board is already won, we can play anywhere
+                # Set current_board_index to None to allow any board
+                self.current_board_index = None
 
             self.__switch_player()
