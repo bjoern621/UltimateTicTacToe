@@ -1,7 +1,7 @@
 import pytest
 from typing import List, Tuple
 
-from app import Player, TTTBoard
+from ttt_board import Player, TTTBoard
 
 
 # Helper function to create a board from a list of moves
