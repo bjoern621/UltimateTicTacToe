@@ -21,7 +21,7 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"
             },
-            "args": ["-v", "--tb=short", "--disable-warnings"]
+            "args": ["--tb=short", "--disable-warnings"]
         }
     ]
 }
