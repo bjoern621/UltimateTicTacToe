@@ -1,3 +1,4 @@
+from move_handlers.move_handler import MoveHandler
 from ttt_board import Player
 from uttt_board import UTTTBoard
 
@@ -5,8 +6,10 @@ from uttt_board import UTTTBoard
 class GameState:
     """Class to manage the game state."""
 
-    def __init__(self, board: UTTTBoard):
+    def __init__(self, board: UTTTBoard, playerX: MoveHandler, playerO: MoveHandler):
         self.board = board
+        self.playerX = playerX
+        self.playerO = playerO
         self.current_player: Player = "X"
         self.game_over: bool = False
 
@@ -23,46 +26,32 @@ class GameState:
         while not self.game_over:
             self.board.display_board()
 
-            # Get the current player's move
-            move = input(
-                f"Player {self.current_player}, enter your move (board index and cell index): "
+            board_index, cell_index = (
+                self.playerX.get_move(self.board)
+                if self.current_player == "X"
+                else self.playerO.get_move(self.board)
             )
-            try:
-                board_index, cell_index = map(int, move.split())
 
-                if not (0 <= board_index <= 8):
-                    print("Board index must be between 0 and 8.")
-                    continue
-
-                if not (0 <= cell_index <= 8):
-                    print("Cell index must be between 0 and 8.")
-                    continue
-
-                board = self.board.get_small_board(board_index)
-                if board.winner is not None:
-                    print(
-                        f"Board {board_index} already won by {board.winner}! Try again."
-                    )
-                    continue
-
-                if board.get_cell_value(cell_index) is not None:  # type: ignore
-                    print("Cell already occupied! Try again.")
-                    continue
-
-                board.make_move(cell_index, self.current_player)  # type: ignore
-
-                # TODO: Implement logic to check for overall win
-                # TODO: Implement logic to determine next_board_index
-
-                self.__switch_player()
-
-            except ValueError:
-                print(
-                    "Invalid input! Please enter two numbers separated by space (e.g., '0 4')."
-                )
+            if not (0 <= board_index <= 8):
+                print("Board index must be between 0 and 8.")
                 continue
-            except Exception as e:
-                print(
-                    f"An unexpected error occurred: {e}"
-                )  # Catch other potential errors
+
+            if not (0 <= cell_index <= 8):
+                print("Cell index must be between 0 and 8.")
                 continue
+
+            board = self.board.get_small_board(board_index)
+            if board.winner is not None:
+                print(f"Board {board_index} already won by {board.winner}! Try again.")
+                continue
+
+            if board.get_cell_value(cell_index) is not None:  # type: ignore
+                print("Cell already occupied! Try again.")
+                continue
+
+            board.make_move(cell_index, self.current_player)  # type: ignore
+
+            # TODO: Implement logic to check for overall win
+            # TODO: Implement logic to determine next_board_index
+
+            self.__switch_player()
