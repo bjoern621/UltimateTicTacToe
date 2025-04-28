@@ -5,62 +5,54 @@ type Player = Literal["X", "O"]
 type Winner = Player | Literal["Draw"] | None
 type Square = Player | None
 
-# Define the 5x5 ASCII art patterns
-X_ART = [
-    "╲   ╱",
-    " ╲ ╱ ",
-    "  ╳  ",
-    " ╱ ╲ ",
-    "╱   ╲",
-]
-
-O_ART = [
-    "╭───╮",
-    "│   │",
-    "│   │",
-    "│   │",
-    "╰───╯",
-]
-
-# DRAW_ART = [
-#     "░░░░░",
-#     "░▓▓▓░",
-#     "░▓░▓░",
-#     "░▓▓▓░",
-#     "░░░░░",
-# ]
-
-DRAW_ART = [
-    "# # #",
-    " # # ",
-    "# # #",
-    " # # ",
-    "# # #",
-]
-
-LIGHT_SEP = "─┼─┼─"
-
 
 class TTTBoard:
+    X_ART = [
+        "╲   ╱",
+        " ╲ ╱ ",
+        "  ╳  ",
+        " ╱ ╲ ",
+        "╱   ╲",
+    ]
+
+    O_ART = [
+        "╭───╮",
+        "│   │",
+        "│   │",
+        "│   │",
+        "╰───╯",
+    ]
+
+    DRAW_ART = [
+        "# # #",
+        " # # ",
+        "# # #",
+        " # # ",
+        "# # #",
+    ]
+
+    LIGHT_SEP = "─┼─┼─"
+
     def __init__(self):
         self.board: List[Square] = [None] * 9
         self.winner: Winner = None
 
     def get_row_string(self, row_index: int) -> str:
-        """Returns a string representation of a specific row (0-4) for the small board."""
+        """Returns a string representation of a specific row (0-4) for the small board. The TTT board fits in a 5x5 grid."""
 
         assert 0 <= row_index <= 4, "Row index must be between 0 and 4."
 
         if self.winner == "X":
-            return X_ART[row_index]
+            return self.X_ART[row_index]
         if self.winner == "O":
-            return O_ART[row_index]
+            return self.O_ART[row_index]
         if self.winner == "Draw":
-            return DRAW_ART[row_index]
+            return self.DRAW_ART[row_index]
 
         # If no winner, render the board state and separators
+
         if row_index == 1 or row_index == 3:
-            return LIGHT_SEP  # Return separator for rows 1 and 3
+            return self.LIGHT_SEP
 
         # Map 0, 2, 4 to board rows 0, 1, 2
         board_row_index = row_index // 2
@@ -86,6 +78,7 @@ class UTTTBoard:
         self.winner: Winner = None
         # Next board to play in, None is any board
         self.next_board_index: int | None = None
+        self.next_player: Player = "X"
 
     def get_small_board(self, index: int) -> TTTBoard:
         """Returns the Tic-Tac-Toe board at the given index (0-8)."""
