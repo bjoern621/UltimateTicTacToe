@@ -3,7 +3,7 @@ from typing import List, Literal
 
 type Player = Literal["X", "O"]
 type Winner = Player | Literal["Draw"] | None
-type Square = Player | None
+type CellValue = Player | None
 type CellIndex = Literal[0, 1, 2, 3, 4, 5, 6, 7, 8]
 type BoardIndex = Literal[0, 1, 2, 3, 4, 5, 6, 7, 8]
 
@@ -44,7 +44,7 @@ class TTTBoard:
     __LIGHT_SEP = "─┼─┼─"
 
     def __init__(self):
-        self.__board: List[Square] = [None] * 9
+        self.__board: List[CellValue] = [None] * 9
         self.winner: Winner = None
 
     def get_row_string(self, row_index: int) -> str:
@@ -67,7 +67,7 @@ class TTTBoard:
         # Map 0, 2, 4 to board rows 0, 1, 2
         board_row_index = row_index // 2
 
-        def format_cell(cell_value: Square) -> str:
+        def format_cell(cell_value: CellValue) -> str:
             return cell_value if cell_value is not None else " "
 
         start_cell_index = board_row_index * 3
@@ -113,7 +113,7 @@ class TTTBoard:
 
         return None
 
-    def get_cell_value(self, index: CellIndex) -> Square:
+    def get_cell_value(self, index: CellIndex) -> CellValue:
         """Returns the value of a cell in the small board."""
 
         assert 0 <= index < 9, "Cell index must be between 0 and 8."
@@ -223,9 +223,6 @@ def main():
     # Example: Make a move in the top-left small board (index 0), at its center cell (index 4)
     # ultimate_game.get_small_board(0).board[4] = 'X'
     # ultimate_game.next_board_index = 4 # Next move must be in board 4
-
-    print("\nInitial empty ultimate board:")
-    board.display_board()
 
     state = GameState(board)
 
