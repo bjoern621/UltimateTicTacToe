@@ -6,5 +6,7 @@ from uttt_board import BoardIndex, UTTTBoard
 
 class MoveHandler(ABC):
     @abstractmethod
-    def get_move(self, board: UTTTBoard) -> tuple[BoardIndex, CellIndex]:
+    def get_move(
+        self, board: UTTTBoard, forced_board: BoardIndex | None
+    ) -> tuple[BoardIndex, CellIndex]:
         pass

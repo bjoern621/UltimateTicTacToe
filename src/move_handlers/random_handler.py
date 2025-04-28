@@ -5,8 +5,13 @@ import random
 
 
 class RandomHandler(MoveHandler):
-    def get_move(self, board: UTTTBoard) -> tuple[BoardIndex, CellIndex]:
-        board_index: BoardIndex = random.randint(0, 8)  # type: ignore
+    def get_move(
+        self, board: UTTTBoard, forced_board: BoardIndex | None
+    ) -> tuple[BoardIndex, CellIndex]:
+        if forced_board is not None:
+            board_index = forced_board
+        else:
+            board_index: BoardIndex = random.randint(0, 8)  # type: ignore
         cell_index: CellIndex = random.randint(0, 8)  # type: ignore
 
         return (board_index, cell_index)

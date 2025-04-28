@@ -14,7 +14,7 @@ class GameState:
         self.game_over: bool = False
 
         # Current board to play in, None is any board
-        self.current_board_index: BoardIndex | None = None
+        self.current_forced_board_index: BoardIndex | None = None
 
     def __switch_player(self):
         self.current_player = "O" if self.current_player == "X" else "X"
@@ -26,20 +26,20 @@ class GameState:
             self.board.display_board()
 
             board_index, cell_index = (
-                self.playerX.get_move(self.board)
+                self.playerX.get_move(self.board, self.current_forced_board_index)
                 if self.current_player == "X"
-                else self.playerO.get_move(self.board)
+                else self.playerO.get_move(self.board, self.current_forced_board_index)
             )
 
             assert 0 <= board_index <= 8, "Board index must be between 0 and 8."
             assert 0 <= cell_index <= 8, "Cell index must be between 0 and 8."
 
             if (
-                self.current_board_index is not None
-                and board_index != self.current_board_index
+                self.current_forced_board_index is not None
+                and board_index != self.current_forced_board_index
             ):
                 print(
-                    f"Invalid move! You must play in board {self.current_board_index}."
+                    f"Invalid move! You must play in board {self.current_forced_board_index}."
                 )
                 continue
 
@@ -72,10 +72,10 @@ class GameState:
             # corresponding to the cell index of the last move
             next_small_board = self.board.get_small_board(cell_index)
             if next_small_board.winner is None:
-                self.current_board_index = cell_index
+                self.current_forced_board_index = cell_index
             else:
                 # If the next small board is already won, we can play anywhere
                 # Set current_board_index to None to allow any board
-                self.current_board_index = None
+                self.current_forced_board_index = None
 
             self.__switch_player()
