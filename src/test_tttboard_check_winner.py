@@ -1,12 +1,12 @@
 import pytest
 from typing import List, Tuple
 
-from ttt_board import Player, TTTBoard
+from ttt_board import CellValue, TTTBoard
 
 
 # Helper function to create a board from a list of moves
 def create_board_from_moves(
-    moves: List[Tuple[int, Player]],
+    moves: List[Tuple[int, CellValue]],
 ) -> TTTBoard:
     board = TTTBoard()
     for index, player in moves:
@@ -32,7 +32,7 @@ def create_board_from_moves(
         [(2, "X"), (4, "X"), (6, "X")],
     ],
 )
-def test_check_winner_x_wins(moves: List[Tuple[int, Player]]):  # Added type hint
+def test_check_winner_x_wins(moves: List[Tuple[int, CellValue]]):
     board = create_board_from_moves(moves)
     assert board._TTTBoard__check_winner() == "X"  # type: ignore
 
@@ -54,14 +54,14 @@ def test_check_winner_x_wins(moves: List[Tuple[int, Player]]):  # Added type hin
         [(2, "O"), (4, "O"), (6, "O")],
     ],
 )
-def test_check_winner_o_wins(moves: List[Tuple[int, Player]]):  # Added type hint
+def test_check_winner_o_wins(moves: List[Tuple[int, CellValue]]):
     board = create_board_from_moves(moves)
     assert board._TTTBoard__check_winner() == "O"  # type: ignore
 
 
 # Test case for a draw
 def test_check_winner_draw():
-    moves: List[Tuple[int, Player]] = [
+    moves: List[Tuple[int, CellValue]] = [
         (0, "X"),
         (1, "O"),
         (2, "X"),
@@ -92,10 +92,11 @@ def test_check_winner_draw():
             (4, "O"),
             (5, "O"),
             (6, "O"),
-            (7, "X"),  # (8 is None)
+            (7, "X"),
+            (8, None),
         ],
     ],
 )
-def test_check_winner_no_winner(moves: List[Tuple[int, Player]]):
+def test_check_winner_no_winner(moves: List[Tuple[int, CellValue]]):
     board = create_board_from_moves(moves)
     assert board._TTTBoard__check_winner() is None  # type: ignore

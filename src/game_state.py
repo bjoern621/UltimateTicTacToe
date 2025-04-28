@@ -35,18 +35,28 @@ class GameState:
             assert 0 <= board_index <= 8, "Board index must be between 0 and 8."
             assert 0 <= cell_index <= 8, "Cell index must be between 0 and 8."
 
-            board = self.board.get_small_board(board_index)
-            if board.winner is not None:
-                print(f"Board {board_index} already won by {board.winner}! Try again.")
+            small_board = self.board.get_small_board(board_index)
+            if small_board.winner is not None:
+                print(
+                    f"Board {board_index} already won by {small_board.winner}! Try again."
+                )
                 continue
 
-            if board.get_cell_value(cell_index) is not None:  # type: ignore
+            if small_board.get_cell_value(cell_index) is not None:  # type: ignore
                 print("Cell already occupied! Try again.")
                 continue
 
-            board.make_move(cell_index, self.current_player)  # type: ignore
+            self.board.make_move(board_index, cell_index, self.current_player)  # type: ignore
 
-            # TODO: Implement logic to check for overall win
+            if self.board.winner is not None:
+                self.game_over = True
+                if self.board.winner == "Draw":
+                    print("Game over! It's a draw!")
+                else:
+                    print(f"Game over! {self.board.winner} wins!")
+                self.board.display_board()
+                break
+
             # TODO: Implement logic to determine next_board_index
 
             self.__switch_player()

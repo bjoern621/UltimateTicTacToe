@@ -76,7 +76,7 @@ class TTTBoard:
         return f"{c1}│{c2}│{c3}"
 
     def make_move(self, index: CellIndex, value: Player) -> None:
-        """Sets the value of a cell in the small board."""
+        """Sets the value of a cell in the small board and checks for a winner."""
 
         assert self.__board[index] is None, "Cell already occupied."
         assert self.winner is None, "Game already won."

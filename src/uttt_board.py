@@ -1,5 +1,5 @@
 from typing import List, Literal
-from ttt_board import TTTBoard, Winner
+from ttt_board import CellIndex, Player, TTTBoard, Winner
 
 
 type BoardIndex = Literal[0, 1, 2, 3, 4, 5, 6, 7, 8]
@@ -37,3 +37,44 @@ class UTTTBoard:
                 print(heavy_sep)
 
         print()
+
+    def make_move(
+        self, board_index: BoardIndex, cell_index: CellIndex, player: Player
+    ) -> None:
+        """Makes a move on the specified small board and checks for a winner."""
+
+        small_board = self.__small_boards[board_index]
+
+        small_board.make_move(cell_index, player)
+
+        if small_board.winner is not None:
+            self.winner = self.__check_winner()
+
+    def __check_winner(self) -> Winner:
+        """Checks if the entire UTTT board has a winner."""
+
+        lines = [
+            (0, 1, 2),  # Top Row
+            (3, 4, 5),  # Middle Row
+            (6, 7, 8),  # Bottom Row
+            (0, 3, 6),  # Left Column
+            (1, 4, 7),  # Middle Column
+            (2, 5, 8),  # Right Column
+            (0, 4, 8),  # Diagonal \
+            (2, 4, 6),  # Diagonal /
+        ]
+
+        for line in lines:
+            if all(
+                self.__small_boards[cell_index].winner == "X" for cell_index in line
+            ):
+                return "X"
+            if all(
+                self.__small_boards[cell_index].winner == "O" for cell_index in line
+            ):
+                return "O"
+
+        if all(board.winner is not None for board in self.__small_boards):
+            return "Draw"
+
+        return None
