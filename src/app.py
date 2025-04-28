@@ -5,11 +5,74 @@ type Player = Literal["X", "O"]
 type Winner = Player | Literal["Draw"] | None
 type Square = Player | None
 
+# Define the 5x5 ASCII art patterns
+X_ART = [
+    "╲   ╱",
+    " ╲ ╱ ",
+    "  ╳  ",
+    " ╱ ╲ ",
+    "╱   ╲",
+]
+
+O_ART = [
+    "╭───╮",
+    "│   │",
+    "│   │",
+    "│   │",
+    "╰───╯",
+]
+
+# DRAW_ART = [
+#     "░░░░░",
+#     "░▓▓▓░",
+#     "░▓░▓░",
+#     "░▓▓▓░",
+#     "░░░░░",
+# ]
+
+DRAW_ART = [
+    "# # #",
+    " # # ",
+    "# # #",
+    " # # ",
+    "# # #",
+]
+
+LIGHT_SEP = "─┼─┼─"
+
 
 class TTTBoard:
     def __init__(self):
         self.board: List[Square] = [None] * 9
         self.winner: Winner = None
+
+    def get_row_string(self, row_index: int) -> str:
+        """Returns a string representation of a specific row (0-4) for the small board."""
+
+        assert 0 <= row_index <= 4, "Row index must be between 0 and 4."
+
+        if self.winner == "X":
+            return X_ART[row_index]
+        if self.winner == "O":
+            return O_ART[row_index]
+        if self.winner == "Draw":
+            return DRAW_ART[row_index]
+
+        # If no winner, render the board state and separators
+        if row_index == 1 or row_index == 3:
+            return LIGHT_SEP  # Return separator for rows 1 and 3
+
+        # Map 0, 2, 4 to board rows 0, 1, 2
+        board_row_index = row_index // 2
+
+        def format_cell(cell_value: Square) -> str:
+            return cell_value if cell_value is not None else " "
+
+        start_cell_index = board_row_index * 3
+        c1 = format_cell(self.board[start_cell_index])
+        c2 = format_cell(self.board[start_cell_index + 1])
+        c3 = format_cell(self.board[start_cell_index + 2])
+        return f"{c1}│{c2}│{c3}"
 
     # Add methods later to check win/draw for this small board
     # def check_win(self): ...
@@ -35,33 +98,26 @@ class UTTTBoard:
     def display_board(self):
         """Displays the Ultimate Tic-Tac-Toe board."""
 
-        def format_cell(cell_value: Square) -> str:
-            return cell_value if cell_value is not None else " "
-
-        light_sep = "─┼─┼─"
         heavy_sep = "═══════╬═══════╬═══════"
 
         print()
 
         for big_row in range(3):
-            for cell_row in range(3):
+            for cell_row in range(5):
                 small_board_rows: List[str] = []
                 for big_col in range(3):
                     small_board_index = big_row * 3 + big_col
-                    board = self.small_boards[small_board_index].board
-                    start_cell_index = cell_row * 3
-                    c1 = format_cell(board[start_cell_index])
-                    c2 = format_cell(board[start_cell_index + 1])
-                    c3 = format_cell(board[start_cell_index + 2])
-                    small_board_rows.append(f"{c1}│{c2}│{c3}")
+                    small_board = self.small_boards[small_board_index]
+
+                    # Pad the string to ensure consistent width (5 chars)
+                    # small_board_rows.append(
+                    #     f"{board.get_row_string(cell_row):^5}"
+                    # )  # Center align and pad
+
+                    small_board_rows.append(small_board.get_row_string(cell_row))
 
                 print(" " + " ║ ".join(small_board_rows) + " ")
 
-                # Print light horizontal separator within a big row
-                if cell_row < 2:
-                    print(f" {light_sep} ║ {light_sep} ║ {light_sep} ")
-
-            # Print heavy horizontal separator between big rows
             if big_row < 2:
                 print(heavy_sep)
 
