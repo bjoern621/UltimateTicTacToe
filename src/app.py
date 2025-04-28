@@ -1,5 +1,6 @@
 from game_state import GameState
 from move_handlers.console_handler import ConsoleHandler
+from move_handlers.random_handler import RandomHandler
 from uttt_board import UTTTBoard
 
 
@@ -9,7 +10,7 @@ def main():
     board = UTTTBoard()
 
     playerX = ConsoleHandler("X")
-    playerO = ConsoleHandler("O")
+    playerO = RandomHandler()
 
     state = GameState(board, playerX, playerO)
 
