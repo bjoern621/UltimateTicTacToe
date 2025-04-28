@@ -32,13 +32,8 @@ class GameState:
                 else self.playerO.get_move(self.board)
             )
 
-            if not (0 <= board_index <= 8):
-                print("Board index must be between 0 and 8.")
-                continue
-
-            if not (0 <= cell_index <= 8):
-                print("Cell index must be between 0 and 8.")
-                continue
+            assert 0 <= board_index <= 8, "Board index must be between 0 and 8."
+            assert 0 <= cell_index <= 8, "Cell index must be between 0 and 8."
 
             board = self.board.get_small_board(board_index)
             if board.winner is not None:

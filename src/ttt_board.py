@@ -115,6 +115,4 @@ class TTTBoard:
     def get_cell_value(self, index: CellIndex) -> CellValue:
         """Returns the value of a cell in the small board."""
 
-        assert 0 <= index < 9, "Cell index must be between 0 and 8."
-
         return self.__board[index]
