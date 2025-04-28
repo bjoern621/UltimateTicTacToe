@@ -31,4 +31,4 @@ class ConsoleHandler(MoveHandler):
             print("Cell index must be between 0 and 8.")
             return self.get_move(board)
 
-        return [board_index, cell_index]  # type: ignore
+        return (board_index, cell_index)  # type: ignore
