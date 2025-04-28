@@ -45,9 +45,12 @@ class GameState:
 
             current_small_board = self.board.get_small_board(board_index)
             if current_small_board.winner is not None:
-                print(
-                    f"Board {board_index} already won by {current_small_board.winner}! Try again."
-                )
+                if current_small_board.winner == "Draw":
+                    print(f"Board {board_index} is a draw! Try again.")
+                else:
+                    print(
+                        f"Board {board_index} already won by {current_small_board.winner}! Try again."
+                    )
                 continue
 
             if current_small_board.get_cell_value(cell_index) is not None:  # type: ignore
