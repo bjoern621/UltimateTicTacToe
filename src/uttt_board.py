@@ -15,7 +15,7 @@ class UTTTBoard:
 
         return self.__small_boards[index]
 
-    def display_board(self):
+    def display_board(self, current_forced_board_index: BoardIndex | None) -> None:
         """Displays the Ultimate Tic-Tac-Toe board."""
 
         heavy_sep = "═══════╬═══════╬═══════"
@@ -29,7 +29,11 @@ class UTTTBoard:
                     small_board_index = big_row * 3 + big_col
                     small_board = self.__small_boards[small_board_index]
 
-                    small_board_rows.append(small_board.get_row_string(cell_row))
+                    small_board_rows.append(
+                        small_board.get_row_string(
+                            cell_row, small_board_index == current_forced_board_index
+                        )
+                    )
 
                 print(" " + " ║ ".join(small_board_rows) + " ")
 

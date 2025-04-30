@@ -42,11 +42,16 @@ class TTTBoard:
 
     __LIGHT_SEP = "─┼─┼─"
 
+    __YELLOW = "\033[33m"
+
+    __HIGHLIGHT_COLOR = __YELLOW
+    __RESET = "\033[0m"
+
     def __init__(self):
         self.__board: List[CellValue] = [None] * 9
         self.winner: Winner = None
 
-    def get_row_string(self, row_index: int) -> str:
+    def get_row_string(self, row_index: int, is_forced_board: bool) -> str:
         """Returns a string representation of a specific row (0-4) for the small board. The TTT board fits in a 5x5 grid."""
 
         assert 0 <= row_index <= 4, "Row index must be between 0 and 4."
@@ -61,7 +66,10 @@ class TTTBoard:
         # If no winner, render the board state and separators
 
         if row_index == 1 or row_index == 3:
-            return self.__LIGHT_SEP
+            if is_forced_board:
+                return f"{self.__HIGHLIGHT_COLOR}{self.__LIGHT_SEP}{self.__RESET}"
+            else:
+                return self.__LIGHT_SEP
 
         # Map 0, 2, 4 to board rows 0, 1, 2
         board_row_index = row_index // 2
@@ -73,7 +81,12 @@ class TTTBoard:
         c1 = format_cell(self.__board[start_cell_index])
         c2 = format_cell(self.__board[start_cell_index + 1])
         c3 = format_cell(self.__board[start_cell_index + 2])
-        return f"{c1}│{c2}│{c3}"
+
+        if is_forced_board:
+            colored_seperator = f"{self.__HIGHLIGHT_COLOR}│{self.__RESET}"
+            return f"{c1}{colored_seperator}{c2}{colored_seperator}{c3}"
+        else:
+            return f"{c1}│{c2}│{c3}"
 
     def make_move(self, index: CellIndex, value: Player) -> None:
         """Sets the value of a cell in the small board and checks for a winner."""
