@@ -12,6 +12,13 @@ class RandomHandler(MoveHandler):
             board_index = forced_board
         else:
             board_index: BoardIndex = random.randint(0, 8)  # type: ignore
+
+            while board.get_small_board(board_index).winner is not None:
+                board_index = random.randint(0, 8)  # type: ignore
+
         cell_index: CellIndex = random.randint(0, 8)  # type: ignore
+
+        while board.get_small_board(board_index).get_cell_value(cell_index) is not None:  # type: ignore
+            cell_index = random.randint(0, 8)  # type: ignore
 
         return (board_index, cell_index)
