@@ -23,6 +23,8 @@ class GameState:
         """Main game loop."""
 
         while not self.game_over:
+            print("/\\" * 40)
+
             self.board.display_board()
 
             board_index, cell_index = (
