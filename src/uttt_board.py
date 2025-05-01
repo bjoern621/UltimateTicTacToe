@@ -1,8 +1,9 @@
-from typing import List, Literal
-from ttt_board import CellIndex, Player, TTTBoard, Winner
+from typing import List, Literal, Tuple
+from ttt_board import CellIndex, CellValue, Player, TTTBoard, Winner
 
 
 type BoardIndex = Literal[0, 1, 2, 3, 4, 5, 6, 7, 8]
+type BoardStateHash = Tuple[Tuple[Winner, ...], Tuple[Tuple[CellValue, ...], ...]]
 
 
 class UTTTBoard:
@@ -92,3 +93,21 @@ class UTTTBoard:
         ]
         new_board.winner = self.winner
         return new_board
+
+    def get_hashable_state(
+        self,
+    ) -> BoardStateHash:
+        """
+        Returns a hashable representation of the current board state.
+        Can be used for memoization.
+        """
+
+        small_board_winners: Tuple[Winner, ...] = tuple(
+            board.winner for board in self.__small_boards
+        )
+
+        all_cell_states: Tuple[Tuple[CellValue, ...]] = tuple(
+            tuple(board._TTTBoard__board) for board in self.__small_boards  # type: ignore
+        )
+
+        return (small_board_winners, all_cell_states)
