@@ -82,3 +82,13 @@ class UTTTBoard:
             return "Draw"
 
         return None
+
+    def copy(self) -> "UTTTBoard":
+        """Creates a deep copy of the UTTTBoard."""
+
+        new_board = UTTTBoard()
+        new_board.__small_boards = [
+            small_board.copy() for small_board in self.__small_boards
+        ]
+        new_board.winner = self.winner
+        return new_board

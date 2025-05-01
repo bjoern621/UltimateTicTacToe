@@ -129,3 +129,11 @@ class TTTBoard:
         """Returns the value of a cell in the small board."""
 
         return self.__board[index]
+
+    def copy(self) -> "TTTBoard":
+        """Creates a deep copy of the TTTBoard."""
+
+        new_board = TTTBoard()
+        new_board.__board = self.__board[:]
+        new_board.winner = self.winner
+        return new_board
