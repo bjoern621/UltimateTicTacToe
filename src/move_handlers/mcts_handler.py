@@ -69,11 +69,13 @@ class AIHandler(MoveHandler):
         max_runs = max(child.total_runs for child in search_tree.children)
         candidates = [child for child in search_tree.children if child.total_runs == max_runs]
         best_move = max(candidates, key=lambda child: child.wins)
+
+        # search_tree.print_tree()
         
         print(f"""MTCS had time to think. Best Node: 
               {best_move.total_runs} Runs, 
-              {best_move.wins} Wins, 
-              {best_move.losses} Losses.
+              {best_move.wins} Wins.
+              Total Runs: {search_tree.total_runs}
               """)        
 
         # Update the search tree to the best move for the next turn
