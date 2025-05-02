@@ -33,7 +33,6 @@ class MinimaxHandler(MoveHandler):
         super().__init__(player)
         self.__opponent: Player = "O" if player == "X" else "X"
         self.__max_depth = max_depth
-        self.runtime = 0.0
 
     def get_move(
         self, board: UTTTBoard, forced_board: BoardIndex | None
@@ -53,8 +52,6 @@ class MinimaxHandler(MoveHandler):
         print(
             f"Minimax ({self.player}) chose move: {move} with score: {score}. Took {time.time() - start_time:.2f} seconds."
         )
-
-        self.runtime += time.time() - start_time
 
         return move
 

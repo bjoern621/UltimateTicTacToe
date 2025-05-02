@@ -15,8 +15,6 @@ class MinimaxIterativeHandler(MoveHandler):
     It is time-limited. It has a randomized exploration strategy. It uses memoization to speed up the search process. It stops searching when a winning/losing move is found.
     """
 
-    # TODO: There is a bug searching for a move sometimes returns None for the move and a ?valid? score like 0, 10_000, 3.0, .... This is due to the memoization cache being used. See /bug.md.
-
     __WINNING_LINES = [
         (0, 1, 2),  # Rows
         (3, 4, 5),
@@ -40,8 +38,6 @@ class MinimaxIterativeHandler(MoveHandler):
             ],  # [BoardStateHash, depth, is_maximizing_player, forced_board_index]
             Tuple[float, Tuple[BoardIndex, CellIndex] | None],  # [score, move]
         ] = {}
-        self.runtime = 0.0
-        self.hits = 0
 
     def get_move(
         self, board: UTTTBoard, forced_board: BoardIndex | None
@@ -74,8 +70,7 @@ class MinimaxIterativeHandler(MoveHandler):
 
             print(f"  Finished! Found move: {move} with score: {score}.")
 
-            if move is None:
-                time.sleep(10)
+            assert move is not None, "Minimax returned None for the move."
 
             best_move = move
             best_score = score
@@ -84,13 +79,11 @@ class MinimaxIterativeHandler(MoveHandler):
                 print(f"  Found guaranteed winning/losing move at depth {depth}.")
                 break
 
-        assert best_move is not None, "Minimax returned None for the move."
+        assert best_move is not None, "Minimax returned None for the best_move."
 
         print(
             f"Iterative Minimax ({self.player}) chose move: {best_move} with score: {best_score}. Took {time.time() - start_time:.2f} seconds. Cache size: {len(self.memo)}"
         )
-
-        self.runtime += time.time() - start_time
 
         return best_move
 
@@ -112,11 +105,6 @@ class MinimaxIterativeHandler(MoveHandler):
         memo_key = (board.get_hashable_state(), depth, True, forced_board)
         if memo_key in self.memo:
             mem_score, mem_move = self.memo[memo_key]
-
-            if mem_move is None:
-                print(memo_key)
-                print(self.memo[memo_key])
-
             return mem_score, mem_move, False
 
         if depth == 0:
@@ -155,8 +143,6 @@ class MinimaxIterativeHandler(MoveHandler):
             if alpha >= beta:
                 break  # Prune
 
-        # best_move is None if all possible moves are explored and none are better than the current alpha value
-        # if best_move is not None: # FIX: this fixed the bug where the move was None
         assert memo_key not in self.memo, "Memo key already exists."
         self.memo[memo_key] = (alpha, best_move)
 
@@ -218,8 +204,6 @@ class MinimaxIterativeHandler(MoveHandler):
             if alpha >= beta:
                 break  # Prune
 
-        # best_move is None if all possible moves are explored and none are better than the current alpha value
-        # if best_move is not None:
         assert memo_key not in self.memo, "Memo key already exists."
         self.memo[memo_key] = (beta, best_move)
 

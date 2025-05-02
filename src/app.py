@@ -42,8 +42,6 @@ def main():
     games = 300
 
     start_time = time.time()
-    playerX = MinimaxIterativeHandler("X", 0.3)
-    playerO = MinimaxHandler("O", 5)
 
     for i in range(games):
         board = UTTTBoard()
@@ -54,7 +52,10 @@ def main():
 
         # playerO = RandomHandler("O")2
 
+        playerX = MinimaxIterativeHandler("X", 0.3)
         # playerO = MinimaxIterativeHandler("O", 0.1)
+
+        playerO = MinimaxHandler("O", 5)
 
         state = GameState(board, playerX, playerO)
 
@@ -76,13 +77,6 @@ def main():
     print(f"X wins: {x_wins}")
     print(f"O wins: {o_wins}")
     print(f"Draws: {draws}")
-
-    print(f"Player X runtime: {playerX.runtime:.2f} seconds")
-    print(f"Player X average runtime: {playerX.runtime / games:.2f} seconds")
-    print(f"Player X hits: {playerX.hits}")
-    print(f"Player X average hits: {playerX.hits / games:.2f}")
-    print(f"Player O runtime: {playerO.runtime:.2f} seconds")
-    print(f"Player O average runtime: {playerO.runtime / games:.2f} seconds")
 
     print(f"Time taken: {(time.time() - start_time):.2f} seconds")
 
