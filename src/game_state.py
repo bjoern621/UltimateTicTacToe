@@ -23,7 +23,9 @@ class GameState:
         """Main game loop."""
 
         while not self.game_over:
-            self.board.display_board()
+            print("/\\" * 40)
+
+            self.board.display_board(self.current_forced_board_index)
 
             board_index, cell_index = (
                 self.playerX.get_move(self.board, self.current_forced_board_index)
@@ -65,7 +67,7 @@ class GameState:
                     print("Game over! It's a draw!")
                 else:
                     print(f"Game over! {self.board.winner} wins!")
-                self.board.display_board()
+                self.board.display_board(None)
                 break
 
             # Allow the next move to be played only in the small board
