@@ -11,24 +11,8 @@ class MCTSHandler(MoveHandler):
         self.search_tree: SearchTreeNode | None = None
 
     def get_move(self, board: UTTTBoard, forced_board: BoardIndex | None) -> tuple[BoardIndex, CellIndex]:
-        board_hash = board.get_hashable_state()
-        curr_state = State(None, self.player, board, forced_board)
-
-        if self.search_tree is None:
-            self.search_tree = SearchTreeNode(curr_state, None)
-        
-        matching_child = None
-        for child in self.search_tree.children:
-            if child.state.board.get_hashable_state() == board_hash:
-                matching_child = child
-                break
-        
-        if matching_child:
-            self.search_tree = matching_child
-            self.search_tree.parent = None  # Detach from the old parent
-        else:
-            # If no matching child is found, create a new search tree node
-            self.search_tree = SearchTreeNode(curr_state, None)
+        # Readjust search tree for the opponent's move
+        self.adjust_search_tree(board, forced_board)
         
         # Prepare simulation worker
         stop_event = threading.Event()
@@ -51,6 +35,29 @@ class MCTSHandler(MoveHandler):
             "Fatal error: AIHandler selected a cell that is already claimed."
 
         return move
+    
+    def adjust_search_tree(self, board: UTTTBoard, forced_board: BoardIndex | None):
+        """
+        Adjusts the search tree to account for the opponent's move.\\
+        If the move is already in the search tree, it will be selected as the new root node.\\
+        If the move is not in the search tree, a new search tree node will be created.\\
+        If the search tree is empty, a new search tree node will be created.
+        """
+        curr_state = State(None, self.player, board, forced_board)
+        if self.search_tree is None:
+            self.search_tree = SearchTreeNode(curr_state, None)
+        
+        board_hash = board.get_hashable_state()
+        matching_child = None
+
+        for child in self.search_tree.children:
+            if child.state.board.get_hashable_state() == board_hash and child.state.forced_board == forced_board:
+                matching_child = child
+                self.search_tree = matching_child
+                self.search_tree.parent = None  # Detach from the old parent
+                return
+        
+        self.search_tree = SearchTreeNode(curr_state, None)
     
     def run_simulation(self, search_tree: SearchTreeNode, stop_event: threading.Event):
         time_selection = 0
@@ -79,12 +86,12 @@ class MCTSHandler(MoveHandler):
         candidates = [child for child in search_tree.children if child.total_runs == max_runs]
         best_move = max(candidates, key=lambda child: child.wins)
 
-        print(f"""MTCS had time to think. Best Node: 
+        print(f"""MTCS had time to think. Best Node: {best_move.state.last_move.board}, {best_move.state.last_move.cell} 
               {best_move.total_runs} Runs, 
               {best_move.wins} Wins.
               Total Runs: {search_tree.total_runs}
-              """)        
-
+              """)
+        
         # Update the search tree to the best move for the next turn
         self.search_tree = best_move
         self.search_tree.parent = None

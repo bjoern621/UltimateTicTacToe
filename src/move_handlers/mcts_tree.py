@@ -3,7 +3,7 @@ from uttt_board import BoardIndex, UTTTBoard
 from typing import List, Optional, cast
 import random
 import time
-import math
+import numpy as np
 
 class Move:
     def __init__(self, board: BoardIndex, cell: CellIndex):
@@ -123,6 +123,11 @@ class SearchTreeNode:
         for move in possible_moves:
             # Create a new board for each child
             sim_board = self.state.board.copy()
+
+            assert sim_board.get_small_board(move.board)\
+                            .get_cell_value(move.cell) is None,\
+                            "Invalid move passed to selection-step"
+            
             sim_board.make_move(move.board, move.cell, turn)
 
             forced_board = move.cell if sim_board.get_small_board(move.cell).winner is None else None
@@ -194,12 +199,11 @@ class SearchTreeNode:
         Calculates the potential of a node based on the 
         [UCB1 strategy](https://en.wikipedia.org/wiki/Monte_Carlo_tree_search#Exploration_and_exploitation)
         """
-        assert self.parent is not None, "Root node was passed to __calc_potential"
+        assert self.parent is not None, "Cannot calculate potential for root node"
 
         if self.total_runs == 0:
-            return math.inf
+            return np.inf
         w = self.wins
-        n = self.total_runs
-        c = math.sqrt(2)
-        t = self.parent.total_runs
-        return w / n + c * math.sqrt(math.log(t) / n)
+        n_i = self.total_runs
+        n = self.parent.total_runs
+        return w / n_i + np.sqrt((2 * np.log(n)) / n_i)

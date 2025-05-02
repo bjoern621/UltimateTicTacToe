@@ -40,7 +40,7 @@ def main():
     o_wins = 0
     draws = 0
 
-    games = 25
+    games = 100
 
     start_time = time.time()
 
@@ -54,11 +54,11 @@ def main():
         # playerX = RandomHandler("X")
         # playerO = RandomHandler("O")
 
-        #playerX = MCTSHandler("X", 2)
-        playerO = MCTSHandler("O", 2)
+        playerX = MCTSHandler("X", 0.1)
+        # playerO = MCTSHandler("O", 0.1)
 
-        playerX = MinimaxIterativeHandler("X", 2)
-        #playerO = MinimaxIterativeHandler("O", 2)
+        # playerX = MinimaxIterativeHandler("X", 0.1)
+        playerO = MinimaxIterativeHandler("O", 0.1)
 
         # playerO = MinimaxHandler("O", 5)
 
@@ -78,10 +78,10 @@ def main():
             draws += 1
 
         print(f"Finished game {i + 1} of {games}")
+        print(f"X wins: {x_wins}")
+        print(f"O wins: {o_wins}")
+        print(f"Draws: {draws}")
 
-    print(f"X wins: {x_wins}")
-    print(f"O wins: {o_wins}")
-    print(f"Draws: {draws}")
 
     print(f"Time taken: {(time.time() - start_time):.2f} seconds")
 
