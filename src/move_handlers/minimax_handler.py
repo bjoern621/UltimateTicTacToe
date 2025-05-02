@@ -26,6 +26,8 @@ class MinimaxHandler(MoveHandler):
         (2, 4, 6),
     ]
 
+    __WINNING_SCORE = 10_000
+
     def __init__(
         self,
         player: Player,
@@ -210,9 +212,9 @@ class MinimaxHandler(MoveHandler):
         eval_start_time = time.time()
 
         if board.winner == self.player:
-            return 10_000
+            return self.__WINNING_SCORE
         if board.winner == self.__opponent:
-            return -10_000
+            return -self.__WINNING_SCORE
         if board.winner == "Draw":
             return 0
 
@@ -251,7 +253,7 @@ class MinimaxHandler(MoveHandler):
         return score
 
     def __evaluate_uttt_board_lines(self, board: UTTTBoard) -> float:
-        """Evaluates the UTTT board lines based on the winners of the small boards using precomputed counts and specific weights."""
+        """Evaluates the UTTT board based on the winners of the small boards. +/- 150 for 2 small boards with potential for completion, +/- 50 for 1 small board with potential for completion."""
 
         winners_tuple: Tuple[Winner, ...] = tuple(
             board.get_small_board(cast(BoardIndex, i)).winner for i in range(9)
@@ -357,7 +359,7 @@ class MinimaxHandler(MoveHandler):
         return line_counts
 
     def __evaluate_small_boards(self, board: UTTTBoard) -> float:
-        """Evaluates the playable small boards based on their lines using precomputed counts and specific weights."""
+        """Evaluates the playable small boards based on their lines. +/- 1.5 for 2 cells with potential for completion, +/- 0.5 for 1 cell with potential for completion."""
 
         score = 0.0
         two_in_a_row = 1.5
