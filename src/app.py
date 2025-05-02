@@ -3,7 +3,7 @@ from typing import List
 from game_state import GameState
 from move_handlers.console_handler import ConsoleHandler  # type: ignore
 from move_handlers.minimax_handler import MinimaxHandler  # type: ignore
-from move_handlers.minimax_iterative_handler import MinimaxIterativeHandler
+from move_handlers.minimax_iterative_handler import MinimaxIterativeHandler  # type: ignore
 from move_handlers.random_handler import RandomHandler  # type: ignore
 from uttt_board import BoardIndex, UTTTBoard
 
@@ -50,12 +50,14 @@ def main():
         # playerX = ConsoleHandler("X")
         # playerO = ConsoleHandler("O")
 
-        # playerO = RandomHandler("O")2
+        # playerX = RandomHandler("X")
+        # playerO = RandomHandler("O")
 
         playerX = MinimaxIterativeHandler("X", 0.3)
         # playerO = MinimaxIterativeHandler("O", 0.1)
 
-        playerO = MinimaxHandler("O", 5)
+        # playerX = MinimaxHandler("X", 7)
+        playerO = MinimaxHandler("O", 7)
 
         state = GameState(board, playerX, playerO)
 
