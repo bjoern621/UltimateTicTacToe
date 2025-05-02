@@ -47,18 +47,18 @@ class SearchTreeNode:
         self.children: List[SearchTreeNode] = []
 
         # Stats
-        self.wins: int = 0
+        self.wins: float = 0
         self.total_runs: int = 0
 
         # Analyse
-        self.selection_time: int = 0
-        self.expansion_time: int = 0
-        self.simulation_time: int = 0
-        self.backpropagation_time: int = 0
+        self.selection_time: float = 0
+        self.expansion_time: float = 0
+        self.simulation_time: float = 0
+        self.backpropagation_time: float = 0
 
     def simulate_game(self):
         """Executes one iteration of the MCTS algorithm"""
-        # Selection - traverse tree until we reach a leaf node
+        # Selection - traverse tree until leaf node is reached
         selection_start = time.perf_counter_ns()
         leaf = self.__choose_child()
         self.selection_time = time.perf_counter_ns() - selection_start
@@ -68,8 +68,8 @@ class SearchTreeNode:
         if leaf.state.board.winner is None and not leaf.children:
             leaf.__expand_children()
             # Select a child node randomly for simulation
-            if leaf.children:  # Check if expansion produced any children
-                leaf = random.choice(leaf.children)
+            if leaf.children:
+                leaf = leaf.children[random.randrange(len(leaf.children))]
         self.expansion_time = time.perf_counter_ns() - expansion_start
 
         # Simulation - play out the game from this position
@@ -81,13 +81,6 @@ class SearchTreeNode:
         backpropagation_start = time.perf_counter_ns()
         leaf.__back_propagate(winner)
         self.backpropagation_time = time.perf_counter_ns() - backpropagation_start
-
-        # print(f"""
-        # Selection time: {self.selection_time/1000} ns
-        # Expansion time: {self.expansion_time/1000} ns
-        # Simulation time: {self.simulation_time/1000} ns
-        # Backpropagation time: {self.backpropagation_time/1000} ns
-        # """)
 
     def __choose_child(self) -> 'SearchTreeNode':
         """
@@ -153,8 +146,9 @@ class SearchTreeNode:
         )
 
         while sim_state.board.winner is None:
-            # Make random move
-            move = random.choice(sim_state.get_possible_moves())
+            # Pick a random move from the available moves
+            moves = sim_state.get_possible_moves()
+            move = moves[random.randrange(len(moves))]
             sim_state.board.make_move(move.board, move.cell, sim_state.turn)
 
             # Prepare next turn
