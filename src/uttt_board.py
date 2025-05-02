@@ -1,9 +1,9 @@
-from typing import List, Literal, Tuple
+from typing import List, Literal, Tuple, Union
 from ttt_board import CellIndex, CellValue, Player, TTTBoard, Winner
 
 
 type BoardIndex = Literal[0, 1, 2, 3, 4, 5, 6, 7, 8]
-type BoardStateHash = Tuple[Tuple[Winner, ...], Tuple[Tuple[CellValue, ...], ...]]
+type BoardStateHash = Tuple[Union[Winner, Tuple[CellValue, ...]], ...]
 
 
 class UTTTBoard:
@@ -99,15 +99,17 @@ class UTTTBoard:
     ) -> BoardStateHash:
         """
         Returns a hashable representation of the current board state.
+        The hash is a tuple of length 9. Each element corresponds to a small board.
+        If the small board has a winner, the element is the Winner ('X', 'O', 'Draw').
+        If the small board has no winner, the element is a tuple of the 9 CellValues.
         Can be used for memoization.
         """
 
-        small_board_winners: Tuple[Winner, ...] = tuple(
-            board.winner for board in self.__small_boards
-        )
+        state_list: List[Union[Winner, Tuple[CellValue, ...]]] = []
+        for board in self.__small_boards:
+            if board.winner is not None:
+                state_list.append(board.winner)
+            else:
+                state_list.append(tuple(board._TTTBoard__board))  # type: ignore
 
-        all_cell_states: Tuple[Tuple[CellValue, ...]] = tuple(
-            tuple(board._TTTBoard__board) for board in self.__small_boards  # type: ignore
-        )
-
-        return (small_board_winners, all_cell_states)
+        return tuple(state_list)

@@ -40,6 +40,8 @@ class MinimaxIterativeHandler(MoveHandler):
             ],  # [BoardStateHash, depth, is_maximizing_player, forced_board_index]
             Tuple[float, Tuple[BoardIndex, CellIndex] | None],  # [score, move]
         ] = {}
+        self.runtime = 0.0
+        self.hits = 0
 
     def get_move(
         self, board: UTTTBoard, forced_board: BoardIndex | None
@@ -54,6 +56,7 @@ class MinimaxIterativeHandler(MoveHandler):
         depth = 0
         best_move: Tuple[BoardIndex, CellIndex] | None = None
         best_score = -math.inf
+        self.memo.clear()
 
         # Iterative deepening: increase depth until time limit is exceeded
         while True:
@@ -86,6 +89,8 @@ class MinimaxIterativeHandler(MoveHandler):
         print(
             f"Iterative Minimax ({self.player}) chose move: {best_move} with score: {best_score}. Took {time.time() - start_time:.2f} seconds. Cache size: {len(self.memo)}"
         )
+
+        self.runtime += time.time() - start_time
 
         return best_move
 
