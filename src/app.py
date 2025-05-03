@@ -1,6 +1,7 @@
 import time
 from typing import List
 from game_state import GameState
+from move_handlers.mcts_handler import MCTSHandler # type: ignore
 from move_handlers.console_handler import ConsoleHandler  # type: ignore
 from move_handlers.minimax_handler import MinimaxHandler  # type: ignore
 from move_handlers.minimax_iterative_handler import MinimaxIterativeHandler  # type: ignore
@@ -39,7 +40,7 @@ def main():
     o_wins = 0
     draws = 0
 
-    games = 300
+    games = 100
 
     start_time = time.time()
 
@@ -53,11 +54,14 @@ def main():
         # playerX = RandomHandler("X")
         # playerO = RandomHandler("O")
 
-        playerX = MinimaxIterativeHandler("X", 0.3)
-        # playerO = MinimaxIterativeHandler("O", 0.1)
+        playerX = MCTSHandler("X", 0.1)
+        # playerO = MCTSHandler("O", 0.1)
+
+        # playerX = MinimaxIterativeHandler("X", 0.1)
+        playerO = MinimaxIterativeHandler("O", 0.1)
 
         # playerX = MinimaxHandler("X", 7)
-        playerO = MinimaxHandler("O", 7)
+        # playerO = MinimaxHandler("O", 7)
 
         state = GameState(board, playerX, playerO)
 
@@ -75,10 +79,10 @@ def main():
             draws += 1
 
         print(f"Finished game {i + 1} of {games}")
+        print(f"X wins: {x_wins}")
+        print(f"O wins: {o_wins}")
+        print(f"Draws: {draws}")
 
-    print(f"X wins: {x_wins}")
-    print(f"O wins: {o_wins}")
-    print(f"Draws: {draws}")
 
     print(f"Time taken: {(time.time() - start_time):.2f} seconds")
 
