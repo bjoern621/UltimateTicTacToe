@@ -37,7 +37,9 @@ class MinimaxIterativeHandler(MoveHandler):
             Tuple[
                 BoardStateHash, int, bool, BoardIndex | None
             ],  # [BoardStateHash, depth, is_maximizing_player, forced_board_index]
-            Tuple[float, Tuple[BoardIndex, CellIndex] | None],  # [score, move]
+            Tuple[
+                float, Tuple[BoardIndex, CellIndex] | None, bool
+            ],  # [score, move, terminal]
         ] = {}
 
         self.evaluation_time = 0.0
@@ -74,7 +76,7 @@ class MinimaxIterativeHandler(MoveHandler):
 
             print(f"  Starting search at depth {depth}...")
 
-            score, move, timed_out = self.__alphabeta_max(
+            score, move, timed_out, terminal = self.__alphabeta_max(
                 board, -math.inf, math.inf, depth, forced_board, start_time
             )
 
@@ -91,6 +93,10 @@ class MinimaxIterativeHandler(MoveHandler):
 
             if abs(best_score) == self.__WINNING_SCORE:
                 print(f"  Found guaranteed winning/losing move at depth {depth}.")
+                break
+
+            if terminal:
+                print(f"  All states are terminal at depth {depth}.")
                 break
 
         assert best_move is not None, "Minimax returned None for the best_move."
@@ -111,23 +117,25 @@ class MinimaxIterativeHandler(MoveHandler):
         depth: int,
         forced_board: BoardIndex | None,
         start_time: float,
-    ) -> Tuple[float, Tuple[BoardIndex, CellIndex] | None, bool]:
+    ) -> Tuple[
+        float, Tuple[BoardIndex, CellIndex] | None, bool, bool
+    ]:  # [Score, Move, Timed out, Terminal state]
         """Maximizing player for Alpha-Beta pruning."""
 
         # Time exceeded check
         if time.time() - start_time >= self.__max_time:
-            return 0, None, True
+            return 0, None, True, False
 
         memo_key = (board.get_hashable_state(), depth, True, forced_board)
         if memo_key in self.memo:
-            mem_score, mem_move = self.memo[memo_key]
-            return mem_score, mem_move, False
-
-        if depth == 0:
-            return self.__evaluate_board(board), None, False
+            mem_score, mem_move, mem_terminal = self.memo[memo_key]
+            return mem_score, mem_move, False, mem_terminal
 
         if board.winner is not None:
-            return self.__evaluate_board(board), None, False
+            return self.__evaluate_board(board), None, False, True
+
+        if depth == 0:
+            return self.__evaluate_board(board), None, False, False
 
         possible_moves = self.__get_valid_moves(board, forced_board)
 
@@ -138,6 +146,8 @@ class MinimaxIterativeHandler(MoveHandler):
         # Initialize best_move to None; it will be updated when valid moves are evaluated.
         best_move: Tuple[BoardIndex, CellIndex] | None = None
 
+        all_children_terminal = True
+
         for board_index, cell_index in possible_moves:
             board_copy = board.copy()
             board_copy.make_move(board_index, cell_index, self.player)
@@ -145,12 +155,14 @@ class MinimaxIterativeHandler(MoveHandler):
                 board_copy, cell_index
             )
 
-            score, _, timed_out = self.__alphabeta_min(
+            score, _, timed_out, terminal = self.__alphabeta_min(
                 board_copy, alpha, beta, depth - 1, next_forced_board, start_time
             )
 
+            all_children_terminal = all_children_terminal and terminal
+
             if timed_out:
-                return 0, None, True
+                return 0, None, True, False
 
             if score > alpha:
                 alpha = score
@@ -160,9 +172,9 @@ class MinimaxIterativeHandler(MoveHandler):
                 break  # Prune
 
         assert memo_key not in self.memo, "Memo key already exists."
-        self.memo[memo_key] = (alpha, best_move)
+        self.memo[memo_key] = (alpha, best_move, all_children_terminal)
 
-        return alpha, best_move, False
+        return alpha, best_move, False, all_children_terminal
 
     def __alphabeta_min(
         self,
@@ -172,23 +184,25 @@ class MinimaxIterativeHandler(MoveHandler):
         depth: int,
         forced_board: BoardIndex | None,
         start_time: float,
-    ) -> Tuple[float, Tuple[BoardIndex, CellIndex] | None, bool]:
+    ) -> Tuple[
+        float, Tuple[BoardIndex, CellIndex] | None, bool, bool
+    ]:  # [Score, Move, Timed out, Terminal state]
         """Minimizing player for Alpha-Beta pruning."""
 
         # Time exceeded check
         if time.time() - start_time >= self.__max_time:
-            return 0, None, True
+            return 0, None, True, False
 
         memo_key = (board.get_hashable_state(), depth, False, forced_board)
         if memo_key in self.memo:
-            mem_score, mem_move = self.memo[memo_key]
-            return mem_score, mem_move, False
-
-        if depth == 0:
-            return self.__evaluate_board(board), None, False
+            mem_score, mem_move, mem_terminal = self.memo[memo_key]
+            return mem_score, mem_move, False, mem_terminal
 
         if board.winner is not None:
-            return self.__evaluate_board(board), None, False
+            return self.__evaluate_board(board), None, False, True
+
+        if depth == 0:
+            return self.__evaluate_board(board), None, False, False
 
         possible_moves = self.__get_valid_moves(board, forced_board)
 
@@ -199,6 +213,8 @@ class MinimaxIterativeHandler(MoveHandler):
         # Initialize best_move to None; it will be updated when valid moves are evaluated.
         best_move: Tuple[BoardIndex, CellIndex] | None = None
 
+        all_children_terminal = True
+
         for board_index, cell_index in possible_moves:
             board_copy = board.copy()
             board_copy.make_move(board_index, cell_index, self.__opponent)
@@ -206,12 +222,14 @@ class MinimaxIterativeHandler(MoveHandler):
                 board_copy, cell_index
             )
 
-            score, _, timed_out = self.__alphabeta_max(
+            score, _, timed_out, terminal = self.__alphabeta_max(
                 board_copy, alpha, beta, depth - 1, next_forced_board, start_time
             )
 
+            all_children_terminal = all_children_terminal and terminal
+
             if timed_out:
-                return 0, None, True
+                return 0, None, True, False
 
             if score < beta:
                 beta = score
@@ -221,9 +239,9 @@ class MinimaxIterativeHandler(MoveHandler):
                 break  # Prune
 
         assert memo_key not in self.memo, "Memo key already exists."
-        self.memo[memo_key] = (beta, best_move)
+        self.memo[memo_key] = (beta, best_move, all_children_terminal)
 
-        return beta, best_move, False
+        return beta, best_move, False, all_children_terminal
 
     def __get_valid_moves(
         self, board: UTTTBoard, forced_board: BoardIndex | None
