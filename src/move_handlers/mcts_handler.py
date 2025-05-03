@@ -77,8 +77,6 @@ class MCTSHandler(MoveHandler):
         print(f"Simulation time per iteration:      {time_simulation/search_tree.total_runs} ns")
         print(f"Backpropagation time per iteration: {time_backpropagation/search_tree.total_runs} ns")
 
-        # self.search_tree.print_tree()
-
     def select_move(self, search_tree: SearchTreeNode) -> tuple[BoardIndex, CellIndex]:
         assert search_tree.children, "Fatal error: No children have been calculated yet."
 

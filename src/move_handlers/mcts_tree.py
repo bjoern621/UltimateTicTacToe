@@ -46,11 +46,14 @@ class SearchTreeNode:
         self.parent: SearchTreeNode | None = parent
         self.children: List[SearchTreeNode] = []
 
+        # List of possible moves from this state
+        self.open_moves: List[Move] = self.state.get_possible_moves()
+
         # Stats
         self.wins: float = 0
         self.total_runs: int = 0
 
-        # Analyse
+        # Timing stats (profiling only)
         self.selection_time: float = 0
         self.expansion_time: float = 0
         self.simulation_time: float = 0
@@ -65,14 +68,16 @@ class SearchTreeNode:
 
         # Expansion - if node is not terminal and not expanded, expand it
         expansion_start = time.perf_counter_ns()
-        if leaf.state.board.winner is None and not leaf.children:
-            leaf.__expand_children()
-            # Select a child node randomly for simulation
-            if leaf.children:
-                leaf = leaf.children[random.randrange(len(leaf.children))]
+        if leaf.state.board.winner is None:
+            assert leaf.open_moves, "No moves available to expand"
+            leaf = leaf.__expand_child()
+        else :
+            # Skip expansion and simulation if the game is over
+            leaf.__back_propagate(leaf.state.board.winner)
+            return
         self.expansion_time = time.perf_counter_ns() - expansion_start
 
-        # Simulation - play out the game from this position
+        # Simulation - play out the game from the new node
         simulation_start = time.perf_counter_ns()
         winner = leaf.__run_simulation()
         self.simulation_time = time.perf_counter_ns() - simulation_start
@@ -88,10 +93,10 @@ class SearchTreeNode:
         """
         current_node = self
         while current_node.children:
-            # If there are unexplored children, pick one randomly
-            unexplored = [child for child in current_node.children if child.total_runs == 0]
-            if unexplored:
-                return random.choice(unexplored)
+            # If there are unexplored moves, return
+            # this node to expand it
+            if current_node.open_moves:
+                return current_node
             
             # Otherwise use UCT to select the best child
             current_node = max(
@@ -100,42 +105,27 @@ class SearchTreeNode:
             )
         
         return current_node
-
-    def __expand_children(self):
+    
+    def __expand_child(self) -> 'SearchTreeNode':
         """
-        Calculates all moves available from the current state
-        and creates a child node for each move.\\
+        Expands the current node by adding a child node for the
+        move that was just made.\\
+        Returns the new child node.\\
         Expansion-Step
         """
-        if self.state.board.winner is None:
-            self.children = self.__get_children()
-            assert self.children, "No children found despite the game not being over"
+        assert self.open_moves, "No moves available to expand"
 
-    def __get_children(self) -> List['SearchTreeNode']:
-        """
-        Calculates all moves available from the current state
-        """
-        possible_moves = self.state.get_possible_moves()
-        possible_children = []
-        turn = self.state.turn
-        next_turn = "O" if turn == "X" else "X"
-        
-        for move in possible_moves:
-            # Create a new board for each child
-            sim_board = self.state.board.copy()
+        # Select a random move from the available moves for expansion
+        move = self.open_moves.pop(random.randrange(len(self.open_moves)))
 
-            assert sim_board.get_small_board(move.board)\
-                            .get_cell_value(move.cell) is None,\
-                            "Invalid move passed to selection-step"
-            
-            sim_board.make_move(move.board, move.cell, turn)
+        new_board = self.state.board.copy()
+        new_board.make_move(move.board, move.cell, self.state.turn)
+        forced_board = move.cell if new_board.get_small_board(move.cell).winner is None else None
+        new_state = State(move, "O" if self.state.turn == "X" else "X", new_board, forced_board)
+        new_node = SearchTreeNode(new_state, self)
+        self.children.append(new_node)
 
-            forced_board = move.cell if sim_board.get_small_board(move.cell).winner is None else None
-
-            new_state = State(move, next_turn, sim_board, forced_board)
-            possible_children.append(SearchTreeNode(new_state, self))
-
-        return possible_children
+        return new_node
 
     def __run_simulation(self) -> Winner:
         """
@@ -149,10 +139,11 @@ class SearchTreeNode:
             self.state.board.copy(), 
             self.state.forced_board
         )
+        sim_node = SearchTreeNode(sim_state, self)
 
         while sim_state.board.winner is None:
             # Pick a random move from the available moves
-            moves = sim_state.get_possible_moves()
+            moves = sim_node.open_moves
             move = moves[random.randrange(len(moves))]
             sim_state.board.make_move(move.board, move.cell, sim_state.turn)
 
@@ -161,6 +152,7 @@ class SearchTreeNode:
             sim_state.forced_board = move.cell\
                 if sim_state.board.get_small_board(move.cell).winner is None\
                 else None
+            sim_node.open_moves = sim_state.get_possible_moves()
 
         return sim_state.board.winner
     
@@ -188,11 +180,12 @@ class SearchTreeNode:
         Prints the search tree for debugging purposes
         """
         indent = " " * (level * 4)
-        print(f"{indent}Node: {None if self.state.last_move is None else [self.state.last_move.board, self.state.last_move.cell]}, Wins: {self.wins}, Total Runs: {self.total_runs}")
+        print(f"{indent}Node: Move: {"Tree" if self.state.last_move is None else [self.state.last_move.board, self.state.last_move.cell]}, Wins: {self.wins}, Total Runs: {self.total_runs}")
+        if level > 2 and self.children:
+            print(f"{indent + "    "}Children: {len(self.children)}, Open Moves: {len(self.open_moves)}, Total Wins: {sum(child.wins for child in self.children)}, Total Runs: {sum(child.total_runs for child in self.children)}")
+            return # Limit the depth of the tree to print
         for child in self.children:
             child.print_tree(level + 1)
-
-        return
 
     def __calc_potential(self) -> float:
         """
