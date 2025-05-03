@@ -1,3 +1,4 @@
+import itertools
 import math
 import random
 import time
@@ -5,7 +6,7 @@ from typing import Dict, List, Tuple, cast
 
 from move_handlers.move_handler import MoveHandler
 
-from ttt_board import Player, CellIndex, Winner
+from ttt_board import CellValue, Player, CellIndex, Winner
 from uttt_board import BoardIndex, BoardStateHash, UTTTBoard
 
 
@@ -36,8 +37,18 @@ class MinimaxIterativeHandler(MoveHandler):
             Tuple[
                 BoardStateHash, int, bool, BoardIndex | None
             ],  # [BoardStateHash, depth, is_maximizing_player, forced_board_index]
-            Tuple[float, Tuple[BoardIndex, CellIndex] | None],  # [score, move]
+            Tuple[
+                float, Tuple[BoardIndex, CellIndex] | None, bool
+            ],  # [score, move, terminal]
         ] = {}
+
+        self.evaluation_time = 0.0
+        self.uttt_board_eval_time = 0.0
+        self.individual_boards_eval_time = 0.0
+        self.small_boards_eval_time = 0.0
+        self.__precomputed_line_counts: Dict[
+            Tuple[Winner, ...], Tuple[int, int, int, int]
+        ] = self.__precompute_line_counts()
 
     def get_move(
         self, board: UTTTBoard, forced_board: BoardIndex | None
@@ -54,13 +65,18 @@ class MinimaxIterativeHandler(MoveHandler):
         best_score = -math.inf
         self.memo.clear()
 
+        self.evaluation_time = 0.0
+        self.uttt_board_eval_time = 0.0
+        self.individual_boards_eval_time = 0.0
+        self.small_boards_eval_time = 0.0
+
         # Iterative deepening: increase depth until time limit is exceeded
         while True:
             depth += 1
 
             print(f"  Starting search at depth {depth}...")
 
-            score, move, timed_out = self.__alphabeta_max(
+            score, move, timed_out, terminal = self.__alphabeta_max(
                 board, -math.inf, math.inf, depth, forced_board, start_time
             )
 
@@ -79,10 +95,16 @@ class MinimaxIterativeHandler(MoveHandler):
                 print(f"  Found guaranteed winning/losing move at depth {depth}.")
                 break
 
+            if terminal:
+                print(f"  All states are terminal at depth {depth}.")
+                break
+
         assert best_move is not None, "Minimax returned None for the best_move."
 
         print(
-            f"Iterative Minimax ({self.player}) chose move: {best_move} with score: {best_score}. Took {time.time() - start_time:.2f} seconds. Cache size: {len(self.memo)}"
+            f"Minimax ({self.player}) chose move: {best_move} with score: {best_score}. Took {time.time() - start_time:.2f} seconds "
+            f"(Eval time: {self.evaluation_time:.2f}s - UTTT: {self.uttt_board_eval_time:.2f}s, "
+            f"Indiv: {self.individual_boards_eval_time:.2f}s, Small: {self.small_boards_eval_time:.2f}s)."
         )
 
         return best_move
@@ -95,23 +117,25 @@ class MinimaxIterativeHandler(MoveHandler):
         depth: int,
         forced_board: BoardIndex | None,
         start_time: float,
-    ) -> Tuple[float, Tuple[BoardIndex, CellIndex] | None, bool]:
+    ) -> Tuple[
+        float, Tuple[BoardIndex, CellIndex] | None, bool, bool
+    ]:  # [Score, Move, Timed out, Terminal state]
         """Maximizing player for Alpha-Beta pruning."""
 
         # Time exceeded check
         if time.time() - start_time >= self.__max_time:
-            return 0, None, True
+            return 0, None, True, False
 
         memo_key = (board.get_hashable_state(), depth, True, forced_board)
         if memo_key in self.memo:
-            mem_score, mem_move = self.memo[memo_key]
-            return mem_score, mem_move, False
-
-        if depth == 0:
-            return self.__evaluate_board(board), None, False
+            mem_score, mem_move, mem_terminal = self.memo[memo_key]
+            return mem_score, mem_move, False, mem_terminal
 
         if board.winner is not None:
-            return self.__evaluate_board(board), None, False
+            return self.__evaluate_board(board), None, False, True
+
+        if depth == 0:
+            return self.__evaluate_board(board), None, False, False
 
         possible_moves = self.__get_valid_moves(board, forced_board)
 
@@ -122,6 +146,8 @@ class MinimaxIterativeHandler(MoveHandler):
         # Initialize best_move to None; it will be updated when valid moves are evaluated.
         best_move: Tuple[BoardIndex, CellIndex] | None = None
 
+        all_children_terminal = True
+
         for board_index, cell_index in possible_moves:
             board_copy = board.copy()
             board_copy.make_move(board_index, cell_index, self.player)
@@ -129,12 +155,14 @@ class MinimaxIterativeHandler(MoveHandler):
                 board_copy, cell_index
             )
 
-            score, _, timed_out = self.__alphabeta_min(
+            score, _, timed_out, terminal = self.__alphabeta_min(
                 board_copy, alpha, beta, depth - 1, next_forced_board, start_time
             )
 
+            all_children_terminal = all_children_terminal and terminal
+
             if timed_out:
-                return 0, None, True
+                return 0, None, True, False
 
             if score > alpha:
                 alpha = score
@@ -144,9 +172,9 @@ class MinimaxIterativeHandler(MoveHandler):
                 break  # Prune
 
         assert memo_key not in self.memo, "Memo key already exists."
-        self.memo[memo_key] = (alpha, best_move)
+        self.memo[memo_key] = (alpha, best_move, all_children_terminal)
 
-        return alpha, best_move, False
+        return alpha, best_move, False, all_children_terminal
 
     def __alphabeta_min(
         self,
@@ -156,23 +184,25 @@ class MinimaxIterativeHandler(MoveHandler):
         depth: int,
         forced_board: BoardIndex | None,
         start_time: float,
-    ) -> Tuple[float, Tuple[BoardIndex, CellIndex] | None, bool]:
+    ) -> Tuple[
+        float, Tuple[BoardIndex, CellIndex] | None, bool, bool
+    ]:  # [Score, Move, Timed out, Terminal state]
         """Minimizing player for Alpha-Beta pruning."""
 
         # Time exceeded check
         if time.time() - start_time >= self.__max_time:
-            return 0, None, True
+            return 0, None, True, False
 
         memo_key = (board.get_hashable_state(), depth, False, forced_board)
         if memo_key in self.memo:
-            mem_score, mem_move = self.memo[memo_key]
-            return mem_score, mem_move, False
-
-        if depth == 0:
-            return self.__evaluate_board(board), None, False
+            mem_score, mem_move, mem_terminal = self.memo[memo_key]
+            return mem_score, mem_move, False, mem_terminal
 
         if board.winner is not None:
-            return self.__evaluate_board(board), None, False
+            return self.__evaluate_board(board), None, False, True
+
+        if depth == 0:
+            return self.__evaluate_board(board), None, False, False
 
         possible_moves = self.__get_valid_moves(board, forced_board)
 
@@ -183,6 +213,8 @@ class MinimaxIterativeHandler(MoveHandler):
         # Initialize best_move to None; it will be updated when valid moves are evaluated.
         best_move: Tuple[BoardIndex, CellIndex] | None = None
 
+        all_children_terminal = True
+
         for board_index, cell_index in possible_moves:
             board_copy = board.copy()
             board_copy.make_move(board_index, cell_index, self.__opponent)
@@ -190,12 +222,14 @@ class MinimaxIterativeHandler(MoveHandler):
                 board_copy, cell_index
             )
 
-            score, _, timed_out = self.__alphabeta_max(
+            score, _, timed_out, terminal = self.__alphabeta_max(
                 board_copy, alpha, beta, depth - 1, next_forced_board, start_time
             )
 
+            all_children_terminal = all_children_terminal and terminal
+
             if timed_out:
-                return 0, None, True
+                return 0, None, True, False
 
             if score < beta:
                 beta = score
@@ -205,9 +239,9 @@ class MinimaxIterativeHandler(MoveHandler):
                 break  # Prune
 
         assert memo_key not in self.memo, "Memo key already exists."
-        self.memo[memo_key] = (beta, best_move)
+        self.memo[memo_key] = (beta, best_move, all_children_terminal)
 
-        return beta, best_move, False
+        return beta, best_move, False, all_children_terminal
 
     def __get_valid_moves(
         self, board: UTTTBoard, forced_board: BoardIndex | None
@@ -256,8 +290,8 @@ class MinimaxIterativeHandler(MoveHandler):
 
     def __evaluate_board(self, board: UTTTBoard) -> float:
         """Heuristic evaluation function for the UTTT board state."""
+        eval_start_time = time.time()
 
-        # 1. Check for terminal states (win, loss, draw)
         if board.winner == self.player:
             return self.__WINNING_SCORE
         if board.winner == self.__opponent:
@@ -267,15 +301,22 @@ class MinimaxIterativeHandler(MoveHandler):
 
         score = 0.0
 
-        # 2. Evaluate the UTTT board based on small board winners
-        score += self.__evaluate_uttt_board(board)
+        # 1. Evaluate the UTTT board based on small board winners
+        uttt_start_time = time.time()
+        score += self.__evaluate_uttt_board_lines(board)
+        self.uttt_board_eval_time += time.time() - uttt_start_time
 
-        # 3. Add bonus for winning individual small boards (only really useful for sudden death when the game is over and no player has three in a row)
+        # 2. Add bonus for winning individual small boards
+        indiv_start_time = time.time()
         score += self.__evaluate_individual_boards(board)
+        self.individual_boards_eval_time += time.time() - indiv_start_time
 
-        # 4. Add heuristic based on lines within (playable) small boards
+        # 3. Add heuristic based on lines within (playable) small boards
+        small_start_time = time.time()
         score += self.__evaluate_small_boards(board)
+        self.small_boards_eval_time += time.time() - small_start_time
 
+        self.evaluation_time += time.time() - eval_start_time
         return score
 
     def __evaluate_individual_boards(self, board: UTTTBoard) -> float:
@@ -292,65 +333,132 @@ class MinimaxIterativeHandler(MoveHandler):
 
         return score
 
-    def __evaluate_uttt_board(self, board: UTTTBoard) -> float:
+    def __evaluate_uttt_board_lines(self, board: UTTTBoard) -> float:
         """Evaluates the UTTT board based on the winners of the small boards. +/- 150 for 2 small boards with potential for completion, +/- 50 for 1 small board with potential for completion."""
 
-        score = 0.0
-
-        small_board_winners: List[Winner] = [
+        winners_tuple: Tuple[Winner, ...] = tuple(
             board.get_small_board(cast(BoardIndex, i)).winner for i in range(9)
-        ]
+        )
 
-        for combo in self.__WINNING_LINES:
-            line = (
-                small_board_winners[combo[0]],
-                small_board_winners[combo[1]],
-                small_board_winners[combo[2]],
-            )
-            score += self.__score_line(line, 150, 50)
+        my_two, op_two, my_one, op_one = self.__precomputed_line_counts.get(
+            winners_tuple, (-1, -1, -1, -1)
+        )
+
+        if my_two == -1:
+            # This means the board state is not precomputed, which is the case if there is at lest one Draw in the tuple.
+            # In this case we manually compute the score.
+            # A drawn small board is surprisingly rare in the game, so this is not a performance issue.
+
+            my_two = 0
+            op_two = 0
+            my_one = 0
+            op_one = 0
+
+            for combo in self.__WINNING_LINES:
+                line: Tuple[Winner, Winner, Winner] = (
+                    winners_tuple[combo[0]],
+                    winners_tuple[combo[1]],
+                    winners_tuple[combo[2]],
+                )
+
+                my_cells = line.count(self.player)
+                op_cells = line.count(self.__opponent)
+                empty_cells = line.count(None)  # Ignore Draws
+
+                if my_cells == 2 and empty_cells == 1:
+                    my_two += 1
+                elif op_cells == 2 and empty_cells == 1:
+                    op_two += 1
+                elif my_cells == 1 and empty_cells == 2:
+                    my_one += 1
+                elif op_cells == 1 and empty_cells == 2:
+                    op_one += 1
+
+        assert my_two != -1, "my_two should not be -1 after evaluation."
+
+        two_in_a_row = 150
+        one_in_a_row = 50
+
+        score = (
+            (my_two * two_in_a_row)
+            + (op_two * -two_in_a_row)
+            + (my_one * one_in_a_row)
+            + (op_one * -one_in_a_row)
+        )
 
         return score
 
-    def __score_line(
+    def __precompute_line_counts(
         self,
-        line: Tuple[Winner, Winner, Winner],
-        two_in_a_row: float,
-        one_in_a_row: float,
-    ) -> float:
-        """Assigns a score to a single line (row, col, or diag) of winners. +/- two_in_a_row for 2 cells with potential for completion, +/- one_in_a_row for 1 cell with potential for completion."""
+    ) -> Dict[Tuple[Winner, ...], Tuple[int, int, int, int]]:
+        """Precomputes counts of potential winning lines for all possible 9 cell states. There are 3^9 = 19683 possible combinations.
+        Returns a dictionary mapping board state tuples to a tuple:
+        (my_two, op_two, my_one, op_one)
+        where:
+        - my_two: lines with 2 of player's marks and 1 empty
+        - op_two: lines with 2 of opponent's marks and 1 empty
+        - my_one: lines with 1 of player's mark and 2 empty
+        - op_one: lines with 1 of opponent's mark and 2 empty
+        """
 
-        my_cells = line.count(self.player)
-        op_cells = line.count(self.__opponent)
-        empty_cells = line.count(None)
+        line_counts: Dict[Tuple[Winner, ...], Tuple[int, int, int, int]] = {}
+        possible_values: List[CellValue] = [self.player, self.__opponent, None]
 
-        score = 0.0
+        for board_tuple in itertools.product(possible_values, repeat=9):
+            my_two_count = 0
+            op_two_count = 0
+            my_one_count = 0
+            op_one_count = 0
 
-        if my_cells == 2 and empty_cells == 1:
-            score = two_in_a_row
-        elif op_cells == 2 and empty_cells == 1:
-            score = -two_in_a_row
-        elif my_cells == 1 and empty_cells == 2:
-            score = one_in_a_row
-        elif op_cells == 1 and empty_cells == 2:
-            score = -one_in_a_row
+            for combo in self.__WINNING_LINES:
+                line: Tuple[CellValue, CellValue, CellValue] = (
+                    board_tuple[combo[0]],
+                    board_tuple[combo[1]],
+                    board_tuple[combo[2]],
+                )
 
-        return score
+                my_cells = line.count(self.player)
+                op_cells = line.count(self.__opponent)
+                empty_cells = line.count(None)
+
+                if my_cells == 2 and empty_cells == 1:
+                    my_two_count += 1
+                elif op_cells == 2 and empty_cells == 1:
+                    op_two_count += 1
+                elif my_cells == 1 and empty_cells == 2:
+                    my_one_count += 1
+                elif op_cells == 1 and empty_cells == 2:
+                    op_one_count += 1
+
+            line_counts[board_tuple] = (
+                my_two_count,
+                op_two_count,
+                my_one_count,
+                op_one_count,
+            )
+
+        return line_counts
 
     def __evaluate_small_boards(self, board: UTTTBoard) -> float:
         """Evaluates the playable small boards based on their lines. +/- 1.5 for 2 cells with potential for completion, +/- 0.5 for 1 cell with potential for completion."""
 
         score = 0.0
+        two_in_a_row = 1.5
+        one_in_a_row = 0.5
 
         for i in range(9):
             board_index = cast(BoardIndex, i)
             small_board = board.get_small_board(board_index)
             if small_board.winner is None:
-                for combo in self.__WINNING_LINES:
-                    line = (
-                        small_board.get_cell_value(cast(CellIndex, combo[0])),
-                        small_board.get_cell_value(cast(CellIndex, combo[1])),
-                        small_board.get_cell_value(cast(CellIndex, combo[2])),
-                    )
-                    score += self.__score_line(line, 1.5, 0.5)
+                board_tuple: Tuple[CellValue, ...] = small_board.get_cells()
+                my_two, op_two, my_one, op_one = self.__precomputed_line_counts[
+                    board_tuple
+                ]
 
+                score += (
+                    (my_two * two_in_a_row)
+                    + (op_two * -two_in_a_row)
+                    + (my_one * one_in_a_row)
+                    + (op_one * -one_in_a_row)
+                )
         return score

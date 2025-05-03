@@ -137,3 +137,7 @@ class TTTBoard:
         new_board.__board = self.__board[:]
         new_board.winner = self.winner
         return new_board
+
+    def get_cells(self) -> tuple[CellValue, ...]:
+        """Returns the current state of the board cells as a tuple."""
+        return tuple(self.__board)
