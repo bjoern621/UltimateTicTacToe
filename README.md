@@ -18,3 +18,11 @@ A Python-based Ultimate Tic Tac Toe game with an AI opponent
   </details>
 
 - https://www.youtube.com/shorts/_Na3a1ZrX7c
+
+- Papers
+  - MCTS
+      - https://jeffbradberry.com/posts/2015/09/intro-to-monte-carlo-tree-search/
+  - Minimax
+      - https://web.archive.org/web/20210729033030/https://www.cs.huji.ac.il/~ai/projects/2013/UlitmateTic-Tac-Toe/files/report.pdf
+  - Both, focus on UTTT
+      - https://philhchen.github.io/files/tictactoe-paper.pdf
