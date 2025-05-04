@@ -5,6 +5,8 @@ import random
 
 
 class RandomHandler(MoveHandler):
+    __name__ = "Random"
+
     def get_move(
         self, board: UTTTBoard, forced_board: BoardIndex | None
     ) -> tuple[BoardIndex, CellIndex]:
@@ -21,6 +23,6 @@ class RandomHandler(MoveHandler):
         while board.get_small_board(board_index).get_cell_value(cell_index) is not None:  # type: ignore
             cell_index = random.randint(0, 8)  # type: ignore
 
-        print(f"Random ({self.player}) chose: ({board_index}, {cell_index})")
+        if self.log: print(f"Random ({self.player}) chose: ({board_index}, {cell_index})")
 
         return (board_index, cell_index)

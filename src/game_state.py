@@ -19,13 +19,14 @@ class GameState:
     def __switch_player(self):
         self.current_player = "O" if self.current_player == "X" else "X"
 
-    def run_game_loop(self):
+    def run_game_loop(self, log: bool = True) -> None:
         """Main game loop."""
 
         while not self.game_over:
-            print("/\\" * 40)
+            if log:
+                print("/\\" * 40)
 
-            self.board.display_board(self.current_forced_board_index)
+                self.board.display_board(self.current_forced_board_index)
 
             board_index, cell_index = (
                 self.playerX.get_move(self.board, self.current_forced_board_index)
@@ -40,7 +41,7 @@ class GameState:
                 self.current_forced_board_index is not None
                 and board_index != self.current_forced_board_index
             ):
-                print(
+                if log: print(
                     f"Invalid move! You must play in board {self.current_forced_board_index}."
                 )
                 continue
@@ -48,15 +49,15 @@ class GameState:
             current_small_board = self.board.get_small_board(board_index)
             if current_small_board.winner is not None:
                 if current_small_board.winner == "Draw":
-                    print(f"Board {board_index} is a draw! Try again.")
+                    if log: print(f"Board {board_index} is a draw! Try again.")
                 else:
-                    print(
+                    if log: print(
                         f"Board {board_index} already won by {current_small_board.winner}! Try again."
                     )
                 continue
 
             if current_small_board.get_cell_value(cell_index) is not None:  # type: ignore
-                print("Cell already occupied! Try again.")
+                if log: print("Cell already occupied! Try again.")
                 continue
 
             self.board.make_move(board_index, cell_index, self.current_player)  # type: ignore
@@ -64,10 +65,10 @@ class GameState:
             if self.board.winner is not None:
                 self.game_over = True
                 if self.board.winner == "Draw":
-                    print("Game over! It's a draw!")
+                    if log: print("Game over! It's a draw!")
                 else:
-                    print(f"Game over! {self.board.winner} wins!")
-                self.board.display_board(None)
+                    if log: print(f"Game over! {self.board.winner} wins!")
+                if log: self.board.display_board(None)
                 break
 
             # Allow the next move to be played only in the small board

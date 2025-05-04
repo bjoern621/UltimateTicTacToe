@@ -12,7 +12,7 @@ class Move:
 
 class State:
     """The current state of the board, including the move that lead to it"""
-    def __init__(self, last_move: Move | None, turn: Player, board: UTTTBoard, forced_board: BoardIndex):
+    def __init__(self, last_move: Move | None, turn: Player, board: UTTTBoard, forced_board: BoardIndex | None):
         self.last_move: Move | None = last_move # Optional for the root node
         self.turn: Player = turn
         self.board: UTTTBoard = board

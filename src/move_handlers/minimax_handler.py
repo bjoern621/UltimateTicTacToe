@@ -15,6 +15,8 @@ class MinimaxHandler(MoveHandler):
     It uses the Minimax algorithm with Alpha-Beta pruning to determine the best move.
     It is depth-limited. It has a randomized exploration strategy."""
 
+    __name__ = "Minimax"
+
     __WINNING_LINES = [
         (0, 1, 2),  # Rows
         (3, 4, 5),
@@ -32,8 +34,9 @@ class MinimaxHandler(MoveHandler):
         self,
         player: Player,
         max_depth: int = 5,
+        log: bool = True
     ) -> None:
-        super().__init__(player)
+        super().__init__(player, log)
         self.__opponent: Player = "O" if player == "X" else "X"
         self.__max_depth = max_depth
         self.evaluation_time = 0.0
@@ -45,12 +48,14 @@ class MinimaxHandler(MoveHandler):
             Tuple[Winner, ...], Tuple[int, int, int, int]
         ] = self.__precompute_line_counts()
 
+        self.__name__  = f"Minimax (Max_Depth: {max_depth})"
+
     def get_move(
         self, board: UTTTBoard, forced_board: BoardIndex | None
     ) -> tuple[BoardIndex, CellIndex]:
         """Calculates the best move using Minimax."""
 
-        print(f"Minimax ({self.player}) thinking... Forced board: {forced_board}")
+        if self.log: print(f"Minimax ({self.player}) thinking... Forced board: {forced_board}")
 
         start_time = time.time()
         self.evaluation_time = 0.0
@@ -64,7 +69,7 @@ class MinimaxHandler(MoveHandler):
 
         assert move is not None, "Minimax returned None for the move."
 
-        print(
+        if self.log: print(
             f"Minimax ({self.player}) chose move: {move} with score: {score}. Took {time.time() - start_time:.2f} seconds "
             f"(Eval time: {self.evaluation_time:.2f}s - UTTT: {self.uttt_board_eval_time:.2f}s, "
             f"Indiv: {self.individual_boards_eval_time:.2f}s, Small: {self.small_boards_eval_time:.2f}s)."

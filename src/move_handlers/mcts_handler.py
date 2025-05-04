@@ -1,18 +1,27 @@
-from move_handlers.mcts_tree import Move, SearchTreeNode, State
+from move_handlers.mcts_tree import SearchTreeNode, State
 from move_handlers.move_handler import MoveHandler
 from ttt_board import CellIndex, Player
 from uttt_board import BoardIndex, UTTTBoard
 import threading
 
 class MCTSHandler(MoveHandler):
-    def __init__(self, player: Player, max_time: int):
-        self.player = player
-        self.max_time = max_time
+    """Monte Carlo Tree Search (MCTS) move handler."""
+    __name__ = "MCTS"
+
+    def __init__(self, player: Player, max_time: float, log: bool = True):
+        super().__init__(player, log)
+        self.max_time: float = max_time
         self.search_tree: SearchTreeNode | None = None
+        self.__name__ = f"MCTS (Time: {max_time})"
+        self.total_simulations = 0
+        self.total_iterations = 0
+
+    def get_max_value(self) -> float:
+        return self.total_simulations / self.total_iterations if self.total_iterations > 0 else 0
 
     def get_move(self, board: UTTTBoard, forced_board: BoardIndex | None) -> tuple[BoardIndex, CellIndex]:
         # Readjust search tree for the opponent's move
-        self.adjust_search_tree(board, forced_board)
+        self.search_tree = self.get_new_root(board, forced_board)
         
         # Prepare simulation worker
         stop_event = threading.Event()
@@ -36,7 +45,7 @@ class MCTSHandler(MoveHandler):
 
         return move
     
-    def adjust_search_tree(self, board: UTTTBoard, forced_board: BoardIndex | None):
+    def get_new_root(self, board: UTTTBoard, forced_board: BoardIndex | None) -> SearchTreeNode:
         """
         Adjusts the search tree to account for the opponent's move.\\
         If the move is already in the search tree, it will be selected as the new root node.\\
@@ -45,19 +54,16 @@ class MCTSHandler(MoveHandler):
         """
         curr_state = State(None, self.player, board, forced_board)
         if self.search_tree is None:
-            self.search_tree = SearchTreeNode(curr_state, None)
+            return SearchTreeNode(curr_state, None)
         
         board_hash = board.get_hashable_state()
-        matching_child = None
 
         for child in self.search_tree.children:
             if child.state.board.get_hashable_state() == board_hash and child.state.forced_board == forced_board:
-                matching_child = child
-                self.search_tree = matching_child
-                self.search_tree.parent = None  # Detach from the old parent
-                return
+                child.parent = None  # Detach from the old parent
+                return child
         
-        self.search_tree = SearchTreeNode(curr_state, None)
+        return SearchTreeNode(curr_state, None)
     
     def run_simulation(self, search_tree: SearchTreeNode, stop_event: threading.Event):
         time_selection = 0
@@ -72,10 +78,14 @@ class MCTSHandler(MoveHandler):
             time_simulation += search_tree.simulation_time
             time_backpropagation += search_tree.backpropagation_time
 
-        print(f"Selection time per iteration:       {time_selection/search_tree.total_runs} ns")
-        print(f"Expansion time per iteration:       {time_expansion/search_tree.total_runs} ns")
-        print(f"Simulation time per iteration:      {time_simulation/search_tree.total_runs} ns")
-        print(f"Backpropagation time per iteration: {time_backpropagation/search_tree.total_runs} ns")
+        if self.log: 
+            print(f"Selection time per iteration:       {time_selection/search_tree.total_runs} ns")
+            print(f"Expansion time per iteration:       {time_expansion/search_tree.total_runs} ns")
+            print(f"Simulation time per iteration:      {time_simulation/search_tree.total_runs} ns")
+            print(f"Backpropagation time per iteration: {time_backpropagation/search_tree.total_runs} ns")
+
+        self.total_simulations += search_tree.total_runs
+        self.total_iterations += 1
 
     def select_move(self, search_tree: SearchTreeNode) -> tuple[BoardIndex, CellIndex]:
         assert search_tree.children, "Fatal error: No children have been calculated yet."
@@ -84,14 +94,19 @@ class MCTSHandler(MoveHandler):
         candidates = [child for child in search_tree.children if child.total_runs == max_runs]
         best_move = max(candidates, key=lambda child: child.wins)
 
-        print(f"""MTCS had time to think. Best Node: {best_move.state.last_move.board}, {best_move.state.last_move.cell} 
+        if self.log and best_move.state.last_move: print(f"""MTCS had time to think. Best Node: {best_move.state.last_move.board}, {best_move.state.last_move.cell}
               {best_move.total_runs} Runs, 
               {best_move.wins} Wins.
               Total Runs: {search_tree.total_runs}
               """)
+            
+        with open("mcts_runtime.csv", "a") as f:
+            f.write(f"{self.max_time};{search_tree.total_runs};{best_move.wins/best_move.total_runs}\n")
         
         # Update the search tree to the best move for the next turn
         self.search_tree = best_move
         self.search_tree.parent = None
+
+        assert best_move.state.last_move is not None, "Fatal error: Best move is None."
 
         return best_move.state.last_move.board, best_move.state.last_move.cell

@@ -1,0 +1,5 @@
+Model 1;Model 2;Runtime 1; Runtime 2;Wins X;Wins Y;Draws;Max-Value 1;Max-Value 2
+MCTSHandler;MinimaxIterativeHandler;0.1;0.1;7;37;6;176.71428571428572;5.0
+MinimaxIterativeHandler;MCTSHandler;0.1;0.1;37;5;8;4.958333333333333;443.7916666666667
+MCTSHandler;MinimaxIterativeHandler;1;0.1;28;14;8;2141.904761904762;4.65
+MinimaxIterativeHandler;MCTSHandler;1;0.1;46;0;4;6.619047619047619;187.5

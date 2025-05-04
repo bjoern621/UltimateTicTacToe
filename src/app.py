@@ -1,12 +1,14 @@
-import time
+import time # type: ignore
 from typing import List
 from game_state import GameState
 from move_handlers.mcts_handler import MCTSHandler # type: ignore
 from move_handlers.console_handler import ConsoleHandler  # type: ignore
 from move_handlers.minimax_handler import MinimaxHandler  # type: ignore
 from move_handlers.minimax_iterative_handler import MinimaxIterativeHandler  # type: ignore
+from move_handlers.move_handler import MoveHandler
 from move_handlers.random_handler import RandomHandler  # type: ignore
 from uttt_board import BoardIndex, UTTTBoard
+from tqdm import tqdm
 
 
 def modify_board(board: UTTTBoard) -> None:
@@ -32,43 +34,89 @@ def modify_board(board: UTTTBoard) -> None:
     board2.make_move(7, "O")
     board2.make_move(8, "X")
 
-
 def main():
     print("Running...")
 
+    #with open("model_comparison.csv", "a") as f:
+    #    f.write(f"Model 1;Model 2;Wins X;Wins Y;Draws\n")
+
+    # Random vs Minimax
+    #compare_models(RandomHandler("X", False), MinimaxIterativeHandler("O", 0.1, False), 1000)
+    #compare_models(MinimaxIterativeHandler("X", 0.1, False), RandomHandler("O", False), 1000)
+    #
+    ## Random vs MCTS
+    #compare_models(RandomHandler("X", False), MCTSHandler("O", 0.1, False), 1000)
+    #compare_models(MCTSHandler("X", 0.1, False), RandomHandler("O", False), 1000)
+
+    # MCTS vs Minimax
+    # compare_models(MCTSHandler("X", 0.1, False), MinimaxIterativeHandler("O", 0.1, False), 1000)
+    # compare_models(MinimaxIterativeHandler("X", 0.1, False), MCTSHandler("O", 0.1, False), 1000)
+    # print("All comparisons done")
+
+    # MCTS moves with increasing time limits
+    compare_runtime([5])
+
+def compare_runtime(time_limits: List[float]):
+    # with open("runtime_comparison.csv", "w") as f:
+    #     f.write(f"Model 1;Model 2;Runtime 1; Runtime 2;Wins X;Wins Y;Draws;Max-Value 1;Max-Value 2\n")
+        
+    for i in time_limits:
+        model1 = MCTSHandler
+        model2 = MinimaxIterativeHandler
+        run_comparison(model1, model2, i) # increase time limit for MCTS
+        run_comparison(model2, model1, i) # increase time limit for Minimax
+            
+def run_comparison(model1: type[MCTSHandler] | type[MinimaxIterativeHandler], model2: type[MCTSHandler] | type[MinimaxIterativeHandler], time: float):
+    x_wins = 0
+    o_wins = 0
+    draws = 0
+    progress_bar = tqdm(
+        range(50),
+        desc=f"{model1.__name__}: {time} seconds vs {model2.__name__}: 0.1 seconds",
+        bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}'
+    )
+    algo1 = None
+    algo2 = None
+    for _ in progress_bar:
+        try:
+            algo1 = model1("X", time, False)
+            algo2 = model2("O", 0.1, False)
+            board = UTTTBoard()
+            state = GameState(board, algo1, algo2)
+            state.run_game_loop(False)
+
+            if board.winner == "X": 
+                x_wins += 1
+            elif board.winner == "O":
+                o_wins += 1
+            else:
+                draws += 1
+        except KeyboardInterrupt:
+            print("\nGame interrupted. Exiting...")
+            return
+        
+    with open("runtime_comparison.csv", "a") as f:
+        f.write(f"{model1.__name__};{model2.__name__};{time};0.1;{x_wins};{o_wins};{draws};{algo1.get_max_value() if algo1 else 0};{algo2.get_max_value() if algo2 else 0}\n")
+
+def compare_models(playerX: MoveHandler, playerO: MoveHandler, games: int = 100):
     x_wins = 0
     o_wins = 0
     draws = 0
 
-    games = 100
+    progress_bar = tqdm(
+        range(games),
+        desc=f"{playerX.__class__.__name__} vs {playerO.__class__.__name__}",
+        bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}'
+    )
 
-    start_time = time.time()
-
-    for i in range(games):
+    for _ in progress_bar:
         board = UTTTBoard()
-        # modify_board(board)
-
-        # playerX = ConsoleHandler("X")
-        # playerO = ConsoleHandler("O")
-
-        # playerX = RandomHandler("X")
-        # playerO = RandomHandler("O")
-
-        playerX = MCTSHandler("X", 0.1)
-        # playerO = MCTSHandler("O", 0.1)
-
-        # playerX = MinimaxIterativeHandler("X", 0.1)
-        playerO = MinimaxIterativeHandler("O", 0.1)
-
-        # playerX = MinimaxHandler("X", 7)
-        # playerO = MinimaxHandler("O", 7)
-
         state = GameState(board, playerX, playerO)
 
         try:
-            state.run_game_loop()
+            state.run_game_loop(False)
         except KeyboardInterrupt:
-            print("Game interrupted. Exiting...")
+            print("\nGame interrupted. Exiting...")
             break
 
         if board.winner == "X":
@@ -78,14 +126,9 @@ def main():
         else:
             draws += 1
 
-        print(f"Finished game {i + 1} of {games}")
-        print(f"X wins: {x_wins}")
-        print(f"O wins: {o_wins}")
-        print(f"Draws: {draws}")
-
-
-    print(f"Time taken: {(time.time() - start_time):.2f} seconds")
-
+    with open("model_comparison.csv", "a") as f:
+        f.write(f"{playerX.__name__};{playerO.__name__};{x_wins};{o_wins};{draws}\n")
+    
 
 if __name__ == "__main__":
     main()

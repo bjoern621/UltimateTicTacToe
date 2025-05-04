@@ -15,7 +15,7 @@ class MinimaxIterativeHandler(MoveHandler):
     It uses the Minimax algorithm with Alpha-Beta pruning to determine the best move.
     It is time-limited. It has a randomized exploration strategy. It uses memoization to speed up the search process. It stops searching when a winning/losing move is found.
     """
-
+    __name__ = "Minimax (Iterative)"
     __WINNING_LINES = [
         (0, 1, 2),  # Rows
         (3, 4, 5),
@@ -29,8 +29,8 @@ class MinimaxIterativeHandler(MoveHandler):
 
     __WINNING_SCORE = 10_000
 
-    def __init__(self, player: Player, max_time: float = 1.0) -> None:
-        super().__init__(player)
+    def __init__(self, player: Player, max_time: float = 1.0, log: bool = True) -> None:
+        super().__init__(player, log)
         self.__opponent: Player = "O" if player == "X" else "X"
         self.__max_time = max_time
         self.memo: Dict[
@@ -50,12 +50,19 @@ class MinimaxIterativeHandler(MoveHandler):
             Tuple[Winner, ...], Tuple[int, int, int, int]
         ] = self.__precompute_line_counts()
 
+        self.__name__ = f"{self.__name__} (Time: {self.__max_time:.2f}s)"
+        self.total_searchdepths = 0
+        self.total_iterations = 0
+
+    def get_max_value(self) -> float:
+        return self.total_searchdepths / self.total_iterations if self.total_iterations > 0 else 0
+
     def get_move(
         self, board: UTTTBoard, forced_board: BoardIndex | None
     ) -> tuple[BoardIndex, CellIndex]:
         """Calculates the best move using Minimax."""
 
-        print(
+        if self.log: print(
             f"Iterative Minimax ({self.player}) thinking... Forced board: {forced_board}"
         )
 
@@ -74,17 +81,17 @@ class MinimaxIterativeHandler(MoveHandler):
         while True:
             depth += 1
 
-            print(f"  Starting search at depth {depth}...")
+            if self.log: print(f"  Starting search at depth {depth}...")
 
             score, move, timed_out, terminal = self.__alphabeta_max(
                 board, -math.inf, math.inf, depth, forced_board, start_time
             )
 
             if timed_out:
-                print(f"  Time limit reached during depth {depth} search.")
+                if self.log: print(f"  Time limit reached during depth {depth} search.")
                 break
 
-            print(f"  Finished! Found move: {move} with score: {score}.")
+            if self.log: print(f"  Finished! Found move: {move} with score: {score}.")
 
             assert move is not None, "Minimax returned None for the move."
 
@@ -92,16 +99,19 @@ class MinimaxIterativeHandler(MoveHandler):
             best_score = score
 
             if abs(best_score) == self.__WINNING_SCORE:
-                print(f"  Found guaranteed winning/losing move at depth {depth}.")
+                if self.log: print(f"  Found guaranteed winning/losing move at depth {depth}.")
                 break
 
             if terminal:
-                print(f"  All states are terminal at depth {depth}.")
+                if self.log: print(f"  All states are terminal at depth {depth}.")
                 break
 
         assert best_move is not None, "Minimax returned None for the best_move."
 
-        print(
+        self.total_searchdepths += depth
+        self.total_iterations += 1
+
+        if self.log: print(
             f"Minimax ({self.player}) chose move: {best_move} with score: {best_score}. Took {time.time() - start_time:.2f} seconds "
             f"(Eval time: {self.evaluation_time:.2f}s - UTTT: {self.uttt_board_eval_time:.2f}s, "
             f"Indiv: {self.individual_boards_eval_time:.2f}s, Small: {self.small_boards_eval_time:.2f}s)."

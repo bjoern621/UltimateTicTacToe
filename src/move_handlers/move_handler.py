@@ -8,7 +8,8 @@ from uttt_board import BoardIndex, UTTTBoard
 class MoveHandler(ABC):
     """Abstract base class for move handlers."""
 
-    def __init__(self, player: Player):
+    def __init__(self, player: Player, log: bool = True) -> None:
+        self.log: bool = log
         self.player: Player = player
 
     @abstractmethod

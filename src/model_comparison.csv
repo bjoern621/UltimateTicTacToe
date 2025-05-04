@@ -1,0 +1,8 @@
+Model 1;Model 2;Wins X;Wins Y;Draws
+Random;Minimax (Iterative) (Time: 0.10s);5;983;12
+Minimax (Iterative) (Time: 0.10s);Random;994;0;6
+Random;MCTS (Time: 0.1);1;997;2
+MCTS (Time: 0.1);Random;993;1;6
+MCTS (Time: 0.1);Minimax (Iterative) (Time: 0.10s);198;649;153
+Minimax (Iterative) (Time: 0.10s);MCTS (Time: 0.1);214;31;35
+Minimax (Iterative) (Time: 0.10s);MCTS (Time: 0.1);767;118;115
