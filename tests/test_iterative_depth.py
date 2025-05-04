@@ -5,7 +5,7 @@ from ttt_board import Winner
 from uttt_board import BoardStateHash, UTTTBoard, BoardIndex, CellIndex
 
 
-def __set_board_state(board: UTTTBoard, state: BoardStateHash):
+def set_board_state(board: UTTTBoard, state: BoardStateHash):
     """Sets the winner of each small board for testing purposes."""
 
     assert len(state) == 9, "Test state tuple must have exactly 9 elements."
@@ -67,7 +67,7 @@ def test_stop_all_children_terminal():
         ("O", None, "X", None, None, "X", None, "O", "O"),
         "X",
     )
-    __set_board_state(board, state)
+    set_board_state(board, state)
 
     board.display_board(4)
 
