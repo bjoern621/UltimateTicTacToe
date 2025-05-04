@@ -6,3 +6,5 @@ MCTS (Time: 0.1);Random;993;1;6
 MCTS (Time: 0.1);Minimax (Iterative) (Time: 0.10s);198;649;153
 Minimax (Iterative) (Time: 0.10s);MCTS (Time: 0.1);214;31;35
 Minimax (Iterative) (Time: 0.10s);MCTS (Time: 0.1);767;118;115
+Minimax (Iterative) (Time: 0.10s);Minimax (Iterative) (Time: 0.10s);238;146;116
+Minimax (Iterative) (Time: 0.10s);Minimax (Iterative) (Time: 0.10s);456;308;236

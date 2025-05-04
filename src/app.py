@@ -54,7 +54,13 @@ def main():
     # print("All comparisons done")
 
     # MCTS moves with increasing time limits
-    compare_runtime([5])
+    # compare_runtime([5])
+
+    compare_models(MinimaxIterativeHandler("X", 0.1, False), MinimaxIterativeHandler("O", 0.1, False), 1000)
+
+    # analyse_branching_factor()
+
+    print("All done")
 
 def compare_runtime(time_limits: List[float]):
     # with open("runtime_comparison.csv", "w") as f:
@@ -129,6 +135,40 @@ def compare_models(playerX: MoveHandler, playerO: MoveHandler, games: int = 100)
     with open("model_comparison.csv", "a") as f:
         f.write(f"{playerX.__name__};{playerO.__name__};{x_wins};{o_wins};{draws}\n")
     
+def analyse_branching_factor():
+    with open("branching_factor.csv", "w") as f:
+        f.write("Move;Possible Moves Total;Simulation Count\n")
+
+    branching_coll = dict[int, tuple[int, int]]()
+
+    progress_bar = tqdm(
+        range(300),
+        desc="Branching Factor Analysis",
+        bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}'
+    )
+    
+    for i in progress_bar:
+        handler1 = MCTSHandler("X", 0.1, False)
+        handler2 = MCTSHandler("O", 0.1, False)
+        board = UTTTBoard()
+        state = GameState(board, handler1, handler2)
+        state.run_game_loop(False)
+
+        for move, count in handler1.branching_factor.items():
+            if move not in branching_coll:
+                branching_coll[move] = count, 1
+            else:
+                branching_coll[move] = count + branching_coll[move][0], 1 + branching_coll[move][1]
+        
+        for move, count in handler2.branching_factor.items():
+            if move not in branching_coll:
+                branching_coll[move] = count, 1
+            else:
+                branching_coll[move] = count + branching_coll[move][0], 1 + branching_coll[move][1]
+
+    with open("branching_factor.csv", "a") as f:
+        for move, count in branching_coll.items():
+            f.write(f"{move};{count[0]};{count[1]}\n")
 
 if __name__ == "__main__":
     main()

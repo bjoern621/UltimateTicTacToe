@@ -16,6 +16,9 @@ class MCTSHandler(MoveHandler):
         self.total_simulations = 0
         self.total_iterations = 0
 
+        self.turn = 0 if player == "X" else 1
+        self.branching_factor = dict[int, int]()
+
     def get_max_value(self) -> float:
         return self.total_simulations / self.total_iterations if self.total_iterations > 0 else 0
 
@@ -87,6 +90,9 @@ class MCTSHandler(MoveHandler):
         self.total_simulations += search_tree.total_runs
         self.total_iterations += 1
 
+        self.branching_factor[self.turn] = len(search_tree.children) + len(search_tree.open_moves)
+        self.turn += 2
+
     def select_move(self, search_tree: SearchTreeNode) -> tuple[BoardIndex, CellIndex]:
         assert search_tree.children, "Fatal error: No children have been calculated yet."
 
@@ -100,8 +106,8 @@ class MCTSHandler(MoveHandler):
               Total Runs: {search_tree.total_runs}
               """)
             
-        with open("mcts_runtime.csv", "a") as f:
-            f.write(f"{self.max_time};{search_tree.total_runs};{best_move.wins/best_move.total_runs}\n")
+        # with open("mcts_runtime.csv", "a") as f:
+        #     f.write(f"{self.max_time};{search_tree.total_runs};{best_move.wins/best_move.total_runs}\n")
         
         # Update the search tree to the best move for the next turn
         self.search_tree = best_move
