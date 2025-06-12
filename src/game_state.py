@@ -83,7 +83,7 @@ class GameState:
     def run_game_informed(self) -> None:
         while not self.game_over:
             move_maker = self.player_smart_X if self.current_player == "X" else self.player_smart_O
-            [board_index, cell_index], confidence = (
+            (board_index, cell_index), score = (
                 move_maker.get_move_confidence(self.board, self.current_forced_board_index)
             )
 
@@ -103,7 +103,7 @@ class GameState:
             if current_small_board.get_cell_value(cell_index) is not None:  # type: ignore
                 continue
 
-            self.boards_for_writing.append(((self.board.copy(), confidence), self.current_forced_board_index))
+            self.boards_for_writing.append(((self.board.copy(), score), self.current_forced_board_index))
 
             self.round_count += 1
             self.board.make_move(board_index, cell_index, self.current_player)  # type: ignore
