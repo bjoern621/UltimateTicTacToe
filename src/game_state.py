@@ -1,5 +1,5 @@
+from typing import List
 from move_handlers.minimax_handler import MinimaxHandler
-from move_handlers.move_handler import MoveHandler
 from move_handlers.random_handler import RandomHandler
 from ttt_board import Player
 from uttt_board import BoardIndex, UTTTBoard
@@ -8,7 +8,7 @@ from uttt_board import BoardIndex, UTTTBoard
 class GameState:
     """Class to manage the game state."""
 
-    def __init__(self, player_dumb: RandomHandler, player_smart: MinimaxHandler, last_move_naive : int):
+    def __init__(self, player_dumb: RandomHandler, player_smart: MinimaxHandler, last_move_naive : int, index: int = 0):
         """
         Randomly simulates a game until last_move_naive is reached, upon which it switches to a smart player.
         Gamestates after last_move_naive are written to file.
@@ -24,6 +24,8 @@ class GameState:
         self.game_over: bool = False
         self.round_count: int = 0
         self.last_move_naive: int = last_move_naive
+        self.boards_for_writing: List[UTTTBoard] = []
+        self.index = index
 
         # Current board to play in, None is any board
         self.current_forced_board_index: BoardIndex | None = None
@@ -72,7 +74,8 @@ class GameState:
                 break
 
             self.__switch_player()
-        # Hier in Datei schreiben
+
+        self.boards_for_writing.append(self.board.copy())
 
     def run_game_informed(self) -> None:
         while not self.game_over and not self.round_count > self.last_move_naive:
@@ -112,7 +115,7 @@ class GameState:
                 # Set current_board_index to None to allow any board
                 self.current_forced_board_index = None
             
-            # Hier in Datei schreiben
+            self.boards_for_writing.append(self.board.copy())
 
             if self.board.winner is not None:
                 self.game_over = True
@@ -121,7 +124,7 @@ class GameState:
 
             self.__switch_player()
         
-        # Hier in allen bisherigen Zeilen den Winner eintragen
+        self.write_boards_to_file()
 
 
     def run_game_praktikum(self) -> None:
@@ -140,6 +143,12 @@ class GameState:
 
     def __switch_player(self):
         self.current_player = "O" if self.current_player == "X" else "X"
+
+    def write_boards_to_file(self) -> None:
+        with open("game_boards_dataset.csv", "a") as f:
+            for board in self.boards_for_writing:
+                f.write(f"{self.index};{board.to_csv_row()};{self.current_forced_board_index};{self.board.winner}\n") # stimmt der forced-board-index hier?
+        
 
     def run_game_loop(self, log: bool = True) -> None:
         """Main game loop."""

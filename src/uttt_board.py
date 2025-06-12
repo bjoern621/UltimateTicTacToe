@@ -15,6 +15,13 @@ class UTTTBoard:
         """Returns the Tic-Tac-Toe board at the given index (0-8)."""
 
         return self.__small_boards[index]
+    
+    def to_csv_row(self) -> str:
+        """Returns a CSV row representation of the UTTT board state."""
+
+        return ";".join(
+            board.to_csv() for board in self.__small_boards
+        )
 
     def display_board(self, current_forced_board_index: BoardIndex | None) -> None:
         """Displays the Ultimate Tic-Tac-Toe board."""

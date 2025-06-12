@@ -141,3 +141,9 @@ class TTTBoard:
     def get_cells(self) -> tuple[CellValue, ...]:
         """Returns the current state of the board cells as a tuple."""
         return tuple(self.__board)
+    
+    def to_csv(self) -> str:
+        """Returns a CSV representation of the board state."""
+        return ";".join(
+            cell if cell is not None else " " for cell in self.__board # vlt anderen typen für None verwenden (z.B. Y)
+        )
