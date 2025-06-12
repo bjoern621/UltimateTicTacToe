@@ -147,7 +147,7 @@ def analyse_branching_factor():
         bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}'
     )
     
-    for i in progress_bar:
+    for _ in progress_bar:
         handler1 = MCTSHandler("X", 0.1, False)
         handler2 = MCTSHandler("O", 0.1, False)
         board = UTTTBoard()
