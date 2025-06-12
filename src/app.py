@@ -54,9 +54,19 @@ def create_dataset(board_cound: int, file_name: str):
     )
 
     for i in progress_bar:
-        player_dumb = RandomHandler("X", False)
-        player_smart = MinimaxHandler("O", False)
+        player_dumb_X = RandomHandler("X", False)
+        player_dumb_O = RandomHandler("O", False)
+        player_smart_X = MinimaxHandler("X", False)
+        player_smart_O = MinimaxHandler("O", False)
         last_move_naive = random.randint(0, 70)
         
-        state = GameState(player_dumb, player_smart, last_move_naive, index=i, file_name=file_name)
+        state = GameState(
+            player_dumb_X=player_dumb_X, 
+            player_dumb_O=player_dumb_O,
+            player_smart_X=player_smart_X,
+            player_smart_O=player_smart_O,
+            last_move_naive=last_move_naive,
+            index=i, 
+            file_name=file_name
+            )
         state.run_game_praktikum() # automatically creates the entries for one board

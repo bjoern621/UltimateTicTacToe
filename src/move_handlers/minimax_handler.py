@@ -53,6 +53,11 @@ class MinimaxHandler(MoveHandler):
     def get_move(
         self, board: UTTTBoard, forced_board: BoardIndex | None
     ) -> tuple[BoardIndex, CellIndex]:
+        return self.get_move_confidence(board, forced_board)[0]
+    
+    def get_move_confidence(
+            self, board: UTTTBoard, forced_board: BoardIndex | None
+    ) -> Tuple[Tuple[BoardIndex, CellIndex], float]:
         """Calculates the best move using Minimax."""
 
         if self.log: print(f"Minimax ({self.player}) thinking... Forced board: {forced_board}")
@@ -75,7 +80,8 @@ class MinimaxHandler(MoveHandler):
             f"Indiv: {self.individual_boards_eval_time:.2f}s, Small: {self.small_boards_eval_time:.2f}s)."
         )
 
-        return move
+        return move, score
+        
 
     def __alphabeta_max(
         self,

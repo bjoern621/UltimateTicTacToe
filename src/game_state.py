@@ -8,7 +8,7 @@ from uttt_board import BoardIndex, UTTTBoard
 class GameState:
     """Class to manage the game state."""
 
-    def __init__(self, player_dumb: RandomHandler, player_smart: MinimaxHandler, last_move_naive : int, index: int, file_name: str):
+    def __init__(self, player_dumb_X: RandomHandler, player_dumb_O: RandomHandler, player_smart_X: MinimaxHandler, player_smart_O: MinimaxHandler, last_move_naive : int, index: int, file_name: str):
         """
         Randomly simulates a game until last_move_naive is reached, upon which it switches to a smart player.
         Gamestates after last_move_naive are written to file.
@@ -18,8 +18,10 @@ class GameState:
         :param playerO: Random actor for player O.
         """
         self.board = UTTTBoard()
-        self.player_dumb = player_dumb
-        self.player_smart = player_smart
+        self.player_dumb_X = player_dumb_X
+        self.player_dumb_O = player_dumb_O
+        self.player_smart_X = player_smart_X
+        self.player_smart_O = player_smart_O
         self.current_player: Player = "X"
         self.game_over: bool = False
         self.round_count: int = 0
@@ -35,9 +37,9 @@ class GameState:
         while not self.game_over and not self.round_count > self.last_move_naive:
             
             board_index, cell_index = (
-                self.player_dumb.get_move(self.board, self.current_forced_board_index)
+                self.player_dumb_X.get_move(self.board, self.current_forced_board_index)
                 if self.current_player == "X"
-                else self.player_dumb.get_move(self.board, self.current_forced_board_index)
+                else self.player_dumb_O.get_move(self.board, self.current_forced_board_index)
             )
 
             assert 0 <= board_index <= 8, "Board index must be between 0 and 8."
@@ -79,10 +81,9 @@ class GameState:
 
     def run_game_informed(self) -> None:
         while not self.game_over and not self.round_count > self.last_move_naive:
-            board_index, cell_index = (
-                self.player_smart.get_move(self.board, self.current_forced_board_index)
-                if self.current_player == "X"
-                else self.player_smart.get_move(self.board, self.current_forced_board_index)
+            move_maker = self.player_smart_X if self.current_player == "X" else self.player_smart_O
+            [board_index, cell_index], confidence = (
+                move_maker.get_move_confidence(self.board, self.current_forced_board_index)
             )
 
             assert 0 <= board_index <= 8, "Board index must be between 0 and 8."
@@ -101,7 +102,7 @@ class GameState:
             if current_small_board.get_cell_value(cell_index) is not None:  # type: ignore
                 continue
 
-            self.boards_for_writing.append((self.board.copy(), self.player_smart.confidence)) # TODO: implement Confidence
+            self.boards_for_writing.append((self.board.copy(), confidence)) # TODO: implement Confidence
 
             self.round_count += 1
             self.board.make_move(board_index, cell_index, self.current_player)  # type: ignore
