@@ -139,6 +139,5 @@ class GameState:
 
     def write_boards_to_file(self) -> None:
         with open(self.file_name, "a") as f:
-            print(f"Writing {len(self.boards_for_writing)} boards to file {self.file_name} for index {self.index}")
             for board in self.boards_for_writing:
                 f.write(f"{self.index};{board[0][0].to_csv_row()};{board[1]};{self.board.winner};{board[0][1]}\n")
