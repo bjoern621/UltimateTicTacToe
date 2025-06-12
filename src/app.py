@@ -70,3 +70,6 @@ def create_dataset(board_cound: int, file_name: str):
             file_name=file_name
             )
         state.run_game_praktikum() # automatically creates the entries for one board
+            
+if __name__ == "__main__":
+    main()
