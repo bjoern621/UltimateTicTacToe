@@ -35,7 +35,6 @@ class GameState:
 
     def run_game_naive(self) -> None:
         while not self.game_over and not self.round_count > self.last_move_naive:
-            
             board_index, cell_index = (
                 self.player_dumb_X.get_move(self.board, self.current_forced_board_index)
                 if self.current_player == "X"
@@ -80,7 +79,7 @@ class GameState:
 
 
     def run_game_informed(self) -> None:
-        while not self.game_over and not self.round_count > self.last_move_naive:
+        while not self.game_over:
             move_maker = self.player_smart_X if self.current_player == "X" else self.player_smart_O
             [board_index, cell_index], confidence = (
                 move_maker.get_move_confidence(self.board, self.current_forced_board_index)
@@ -102,7 +101,7 @@ class GameState:
             if current_small_board.get_cell_value(cell_index) is not None:  # type: ignore
                 continue
 
-            self.boards_for_writing.append((self.board.copy(), confidence)) # TODO: implement Confidence
+            self.boards_for_writing.append((self.board.copy(), confidence))
 
             self.round_count += 1
             self.board.make_move(board_index, cell_index, self.current_player)  # type: ignore
@@ -133,20 +132,11 @@ class GameState:
         self.run_game_informed()
         self.write_boards_to_file()
 
-    # def __init__(self, board: UTTTBoard, playerX: MoveHandler, playerO: MoveHandler):
-    #     self.board = board
-    #     self.playerX = playerX
-    #     self.playerO = playerO
-    #     self.current_player: Player = "X"
-    #     self.game_over: bool = False
-
-    #     # Current board to play in, None is any board
-    #     self.current_forced_board_index: BoardIndex | None = None
-
     def __switch_player(self):
         self.current_player = "O" if self.current_player == "X" else "X"
 
     def write_boards_to_file(self) -> None:
         with open(self.file_name, "a") as f:
+            print(f"Writing {len(self.boards_for_writing)} boards to file {self.file_name} for index {self.index}")
             for board in self.boards_for_writing:
                 f.write(f"{self.index};{board[0].to_csv_row()};{self.current_forced_board_index};{self.board.winner};{board[1]}\n") # stimmt der forced-board-index hier?
