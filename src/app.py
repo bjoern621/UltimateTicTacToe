@@ -58,7 +58,7 @@ def create_dataset(board_cound: int, file_name: str):
         player_dumb_O = RandomHandler("O", False)
         player_smart_X = MinimaxHandler("X", log=False)
         player_smart_O = MinimaxHandler("O", log=False)
-        last_move_naive = random.randint(0, 10)
+        last_move_naive = random.randint(0, 66)
         
         state = GameState(
             player_dumb_X=player_dumb_X, 
