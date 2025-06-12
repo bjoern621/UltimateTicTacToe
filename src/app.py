@@ -11,7 +11,6 @@ from move_handlers.random_handler import RandomHandler  # type: ignore
 from uttt_board import BoardIndex, UTTTBoard
 from tqdm import tqdm
 
-
 def modify_board(board: UTTTBoard) -> None:
     """Sets the board state to match the provided ASCII scenario."""
 
@@ -45,7 +44,7 @@ def main():
 def create_dataset(board_cound: int, file_name: str):
     if not os.path.isfile(file_name):
         with open(file_name, "w") as f:
-            header = f"i;{';'.join(f'cell{i}' for i in range(81))};forced_board;winner\n"
+            header = f"i;{';'.join(f'cell{i}' for i in range(81))};forced_board;winner;confidence\n"
             f.write(header)
 
     progress_bar = tqdm(

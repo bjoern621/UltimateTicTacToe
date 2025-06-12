@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 from move_handlers.minimax_handler import MinimaxHandler
 from move_handlers.random_handler import RandomHandler
 from ttt_board import Player
@@ -24,7 +24,7 @@ class GameState:
         self.game_over: bool = False
         self.round_count: int = 0
         self.last_move_naive: int = last_move_naive
-        self.boards_for_writing: List[UTTTBoard] = []
+        self.boards_for_writing: List[Tuple[UTTTBoard, float]] = []
         self.index = index
         self.file_name = file_name
 
@@ -76,7 +76,6 @@ class GameState:
 
             self.__switch_player()
 
-        self.boards_for_writing.append(self.board.copy())
 
     def run_game_informed(self) -> None:
         while not self.game_over and not self.round_count > self.last_move_naive:
@@ -102,8 +101,9 @@ class GameState:
             if current_small_board.get_cell_value(cell_index) is not None:  # type: ignore
                 continue
 
-            self.round_count += 1
+            self.boards_for_writing.append((self.board.copy(), self.player_smart.confidence)) # TODO: implement Confidence
 
+            self.round_count += 1
             self.board.make_move(board_index, cell_index, self.current_player)  # type: ignore
 
             # Allow the next move to be played only in the small board
@@ -116,7 +116,6 @@ class GameState:
                 # Set current_board_index to None to allow any board
                 self.current_forced_board_index = None
             
-            self.boards_for_writing.append(self.board.copy())
 
             if self.board.winner is not None:
                 self.game_over = True
@@ -149,4 +148,4 @@ class GameState:
     def write_boards_to_file(self) -> None:
         with open(self.file_name, "a") as f:
             for board in self.boards_for_writing:
-                f.write(f"{self.index};{board.to_csv_row()};{self.current_forced_board_index};{self.board.winner}\n") # stimmt der forced-board-index hier?
+                f.write(f"{self.index};{board[0].to_csv_row()};{self.current_forced_board_index};{self.board.winner};{board[1]}\n") # stimmt der forced-board-index hier?
