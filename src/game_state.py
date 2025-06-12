@@ -26,7 +26,9 @@ class GameState:
         self.game_over: bool = False
         self.round_count: int = 0
         self.last_move_naive: int = last_move_naive
-        self.boards_for_writing: List[Tuple[UTTTBoard, float]] = []
+
+        # ((Move), Score), Forced Board
+        self.boards_for_writing: List[Tuple[Tuple[UTTTBoard, float], BoardIndex | None]] = []
         self.index = index
         self.file_name = file_name
 
@@ -101,7 +103,7 @@ class GameState:
             if current_small_board.get_cell_value(cell_index) is not None:  # type: ignore
                 continue
 
-            self.boards_for_writing.append((self.board.copy(), confidence))
+            self.boards_for_writing.append(((self.board.copy(), confidence), self.current_forced_board_index))
 
             self.round_count += 1
             self.board.make_move(board_index, cell_index, self.current_player)  # type: ignore
@@ -139,4 +141,4 @@ class GameState:
         with open(self.file_name, "a") as f:
             print(f"Writing {len(self.boards_for_writing)} boards to file {self.file_name} for index {self.index}")
             for board in self.boards_for_writing:
-                f.write(f"{self.index};{board[0].to_csv_row()};{self.current_forced_board_index};{self.board.winner};{board[1]}\n") # stimmt der forced-board-index hier?
+                f.write(f"{self.index};{board[0][0].to_csv_row()};{board[1]};{self.board.winner};{board[0][1]}\n") # stimmt der forced-board-index hier?

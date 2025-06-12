@@ -80,7 +80,7 @@ class MinimaxHandler(MoveHandler):
             f"Indiv: {self.individual_boards_eval_time:.2f}s, Small: {self.small_boards_eval_time:.2f}s)."
         )
 
-        return move, score
+        return (move, score)
         
 
     def __alphabeta_max(
