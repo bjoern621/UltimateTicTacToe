@@ -1,3 +1,5 @@
+import os
+import random
 import time # type: ignore
 from typing import List
 from game_state import GameState
@@ -37,6 +39,10 @@ def modify_board(board: UTTTBoard) -> None:
 def main():
     print("Running...")
 
+    file_name = "boards_dataset.csv"
+    
+
+
     #with open("model_comparison.csv", "a") as f:
     #    f.write(f"Model 1;Model 2;Wins X;Wins Y;Draws\n")
 
@@ -56,11 +62,32 @@ def main():
     # MCTS moves with increasing time limits
     # compare_runtime([5])
 
-    compare_models(MinimaxIterativeHandler("X", 0.1, False), MinimaxIterativeHandler("O", 0.1, False), 1000)
+    # compare_models(MinimaxIterativeHandler("X", 0.1, False), MinimaxIterativeHandler("O", 0.1, False), 1000)
 
     # analyse_branching_factor()
 
     print("All done")
+
+def create_dataset(board_cound: int, file_name: str):
+    if not os.path.isfile(file_name):
+        with open(file_name, "w") as f:
+            header = f"i;{';'.join(f'cell{i}' for i in range(81))};forced_board;winner\n"
+            f.write(header)
+
+    progress_bar = tqdm(
+        range(board_cound),
+        desc="Creating dataset",
+        bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}'
+    )
+
+    for i in progress_bar:
+        player_dumb = RandomHandler("X", False)
+        player_smart = MinimaxHandler("O", False)
+        last_move_naive = random.randint(0, 70)
+        
+        state = GameState(player_dumb, player_smart, last_move_naive, index=i, file_name=file_name)
+        state.run_game_praktikum() # automatically creates the entries for one board
+
 
 def compare_runtime(time_limits: List[float]):
     # with open("runtime_comparison.csv", "w") as f:

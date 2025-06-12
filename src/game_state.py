@@ -8,7 +8,7 @@ from uttt_board import BoardIndex, UTTTBoard
 class GameState:
     """Class to manage the game state."""
 
-    def __init__(self, player_dumb: RandomHandler, player_smart: MinimaxHandler, last_move_naive : int, index: int = 0):
+    def __init__(self, player_dumb: RandomHandler, player_smart: MinimaxHandler, last_move_naive : int, index: int = 0, file_name: str):
         """
         Randomly simulates a game until last_move_naive is reached, upon which it switches to a smart player.
         Gamestates after last_move_naive are written to file.
@@ -26,6 +26,7 @@ class GameState:
         self.last_move_naive: int = last_move_naive
         self.boards_for_writing: List[UTTTBoard] = []
         self.index = index
+        self.file_name = file_name
 
         # Current board to play in, None is any board
         self.current_forced_board_index: BoardIndex | None = None
@@ -121,15 +122,16 @@ class GameState:
                 self.game_over = True
                 break
 
-
             self.__switch_player()
-        
-        self.write_boards_to_file()
-
 
     def run_game_praktikum(self) -> None:
+        """
+        Runs the game with both players, first with a naive player and then with an informed player,
+        writng all boards to a file after the game is over.
+        """
         self.run_game_naive()
         self.run_game_informed()
+        self.write_boards_to_file()
 
     # def __init__(self, board: UTTTBoard, playerX: MoveHandler, playerO: MoveHandler):
     #     self.board = board
@@ -145,7 +147,7 @@ class GameState:
         self.current_player = "O" if self.current_player == "X" else "X"
 
     def write_boards_to_file(self) -> None:
-        with open("game_boards_dataset.csv", "a") as f:
+        with open(self.file_name, "a") as f:
             for board in self.boards_for_writing:
                 f.write(f"{self.index};{board.to_csv_row()};{self.current_forced_board_index};{self.board.winner}\n") # stimmt der forced-board-index hier?
         
