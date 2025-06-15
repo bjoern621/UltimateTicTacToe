@@ -22,6 +22,22 @@
                 "PYTHONPATH": "${workspaceFolder}"
             },
             "args": ["--tb=short", "--disable-warnings"]
+        },
+        {
+            "name": "KNN Train",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/knn/train.py",
+            "suppressMultipleSessionWarning": true,
+            "args": ["boards_dataset.csv"]
+        },
+        {
+            "name": "KNN Predict",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/knn/predict.py",
+            "suppressMultipleSessionWarning": true,
+            "args": ["boards_dataset.csv", "utt_model.pth"]
         }
     ]
 }
