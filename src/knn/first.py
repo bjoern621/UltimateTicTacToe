@@ -46,9 +46,9 @@ def filter_first_entries(input_file, output_file=None):
 
     # Save the filtered data
     if ext.lower() == ".csv":
-        filtered_df.to_csv(output_file, index=False)
+        filtered_df.to_csv(output_file, index=False, sep=";")
     else:
-        filtered_df.to_excel(output_file, index=False)
+        filtered_df.to_excel(output_file, index=False, sep=";")
 
     print(f"Original data has {len(df)} rows.")
     print(f"Filtered data has {len(filtered_df)} rows.")
