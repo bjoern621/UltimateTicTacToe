@@ -22,7 +22,7 @@ def main():
 
         # Load model
         print(f"Loading model from {model_path}...")
-        trained_model = load_model(UTTTNeuralNetwork, model_path)
+        trained_model = load_model(UTTTNeuralNetwork, model_path, input_size=91)
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         print(f"Model loaded successfully (using {device})")
 

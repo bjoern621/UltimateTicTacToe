@@ -26,11 +26,18 @@ def main():
         test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
         # Create model
-        model = UTTTNeuralNetwork(input_size=82)  # 81 cells + 1 forced_board
+        model = UTTTNeuralNetwork(
+            input_size=91
+        )  # 81 cells + 10 forced_board (one-hot encoded)
 
         # Train model
         trained_model, history = train_model(
-            model, train_loader, test_loader, epochs=20, learning_rate=0.001
+            model,
+            train_loader,
+            test_loader,
+            epochs=20,
+            learning_rate=0.001,  # Wie schnell er seine Gewichte anpasst
+            weight_decay=1e-3,  # L2 regularization
         )
 
         # Save model

@@ -37,12 +37,12 @@ def filter_first_entries(input_file, output_file=None):
     category_col = "i"
 
     # Keep only the first occurrence of each category 'i'
-    filtered_df = df.drop_duplicates(subset=[category_col], keep="first")
+    filtered_df = df.drop_duplicates(subset=[category_col], keep="last")
 
     # Generate output filename if not provided
     if output_file is None:
         base, ext = os.path.splitext(input_file)
-        output_file = f"{base}_filtered{ext}"
+        output_file = f"{base}_last{ext}"
 
     # Save the filtered data
     if ext.lower() == ".csv":

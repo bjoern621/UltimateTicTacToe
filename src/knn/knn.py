@@ -1,4 +1,5 @@
 from typing import Any
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -17,12 +18,8 @@ class UTTTDataset(Dataset):
             csv_file (string): Path to the CSV file with board data
             transform (callable, optional): Optional transform to apply to the data
         """
-        # Read only a sample if the file is too large
-        try:
-            self.data = pd.read_csv(csv_file, sep=";")
-        except:
-            # If file is too large, read only first 10000 rows
-            self.data = pd.read_csv(csv_file, sep=";", nrows=10000)
+
+        self.data = pd.read_csv(csv_file, sep=";")
 
         print(f"Dataset loaded with {len(self.data)} samples")
 
@@ -33,23 +30,26 @@ class UTTTDataset(Dataset):
         for col in cell_columns:
             self.data[col] = self.data[col].map({"X": 1, "O": -1, " ": 0})
 
-        # Remove rows where forced_board is NaN
-        initial_len = len(self.data)
-        self.data = self.data.dropna(subset=["forced_board"])
-        removed = initial_len - len(self.data)
-        if removed > 0:
-            print(f"Removed {removed} rows with NaN values in forced_board")
-
         # Convert forced_board to numeric: None=-1, 0-8 as is
-        self.data["forced_board"] = self.data["forced_board"].map(
-            lambda x: -1 if x == "None" else int(x)
+        self.data["forced_board_str"] = self.data["forced_board"].map(
+            lambda x: "fb_None" if pd.isna(x) else f"fb_{int(x)}"
         )
+
+        # Create one-hot encoding for forced_board
+        forced_board_dummies = pd.get_dummies(self.data["forced_board_str"])
 
         # Encode the winner: X, O, Draw
         self.label_encoder = LabelEncoder()
         self.data["winner"] = self.label_encoder.fit_transform(self.data["winner"])
 
-        self.X = self.data[cell_columns + ["forced_board"]].values
+        processed_cell_data = self.data[cell_columns]
+        features_df = pd.concat([processed_cell_data, forced_board_dummies], axis=1)
+
+        print(
+            f"Number of features after one-hot encoding: {features_df.shape[1]}"
+        )  # Should be 91 if 10 fb categories
+
+        self.X = features_df.values.astype(np.float32)
         self.y = self.data["winner"].values
 
         self.transform = transform
@@ -84,7 +84,7 @@ class UTTTDataset(Dataset):
 class UTTTNeuralNetwork(nn.Module):
     """Neural Network for Ultimate Tic Tac Toe prediction"""
 
-    def __init__(self, input_size=82, hidden_sizes=[128, 64], output_size=3):
+    def __init__(self, input_size=91, hidden_sizes=[128, 64], output_size=3):
         """
         Args:
             input_size (int): Size of input features (81 cells + forced board)
@@ -100,14 +100,14 @@ class UTTTNeuralNetwork(nn.Module):
         layers.append(nn.Linear(input_size, hidden_sizes[0]))
         layers.append(nn.ReLU())
         layers.append(nn.BatchNorm1d(hidden_sizes[0]))
-        layers.append(nn.Dropout(0.3))
+        layers.append(nn.Dropout(0.5))
 
         # Hidden layers
         for i in range(len(hidden_sizes) - 1):
             layers.append(nn.Linear(hidden_sizes[i], hidden_sizes[i + 1]))
             layers.append(nn.ReLU())
             layers.append(nn.BatchNorm1d(hidden_sizes[i + 1]))
-            layers.append(nn.Dropout(0.3))
+            layers.append(nn.Dropout(0.5))
 
         # Output layer
         layers.append(nn.Linear(hidden_sizes[-1], output_size))
